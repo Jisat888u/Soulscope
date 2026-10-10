@@ -23,9 +23,27 @@ function parseHash() {
   return { name, args: parts.slice(1), query: new URLSearchParams(query) };
 }
 
+/* ---------- статистика посещений (GoatCounter) ---------- */
+// Сайт одностраничный (hash-роутинг), поэтому каждую вкладку отправляем как отдельную страницу:
+// #/tier → /tier, #/hero/13 → /hero/13. Параметры (?e=…) не считаем — это один и тот же раздел.
+// На localhost count.js сам ничего не отправляет.
+let lastTracked = null;
+function track() {
+  const path = '/' + (location.hash.replace(/^#\/?/, '').split('?')[0] || '');
+  if (path === lastTracked) return; // смена фильтров перерисовывает страницу, но это не новый просмотр
+  const send = () => {
+    if (!window.goatcounter?.count) return false;
+    window.goatcounter.count({ path });
+    lastTracked = path;
+    return true;
+  };
+  if (!send()) document.querySelector('script[data-goatcounter]')?.addEventListener('load', send, { once: true });
+}
+
 async function render() {
   const token = ++renderToken;
   const route = parseHash();
+  track();
   document.querySelectorAll('#tabs a').forEach((a) => {
     const r = a.dataset.route;
     a.classList.toggle('active', r === route.name || (r === 'heroes' && route.name === 'hero'));
