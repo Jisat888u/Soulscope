@@ -1,0 +1,11 @@
+{
+  "name": "dlck-trck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deadlock Tracker — тир-лист, билды, контр-предметы, патч-трекер и связки на линии",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve@14.2.4 -l 5173 .",
+    "update-assets": "node scripts/update-assets.mjs"
+  }
+}

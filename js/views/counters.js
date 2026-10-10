@@ -1,0 +1,242 @@
+// Контр-предметы: выбираете вражеских героев (и опционально своего) — получаете,
+// что собирать: по профилю угроз состава и по статистике (рост винрейта предмета против этих героев).
+import { api } from '../api.js';
+import { A, state, hero, filterBar, bindFilterBar, loading, errorBox, esc, pct, fmtNum, hName, heroImg, itemCard, itemReason, statParams, ensureHeroes } from '../core.js';
+import { THREATS, HERO_THREATS, ROLES, ROLE_ORDER } from '../knowledge.js';
+
+const sel = { enemies: [], mine: null, mode: 'enemy', role: 'all', q: '' };
+
+function readQuery(query) {
+  // без параметров (переход из меню) оставляем прошлый выбор; со ссылкой — берём состав из неё
+  if (!query.has('e') && !query.has('me')) return;
+  sel.enemies = [...new Set((query.get('e') || '').split(',').map(Number).filter((x) => x > 0))].slice(0, 6);
+  sel.mine = +query.get('me') || null;
+}
+function writeQuery() {
+  const q = new URLSearchParams();
+  if (sel.enemies.length) q.set('e', sel.enemies.join(','));
+  if (sel.mine) q.set('me', sel.mine);
+  history.replaceState(null, '', '#/counters' + (q.toString() ? '?' + q : ''));
+}
+
+export async function render(root, { query, alive }) {
+  readQuery(query);
+  await ensureHeroes([...sel.enemies, sel.mine].filter(Boolean));
+  if (!alive()) return;
+
+  root.innerHTML = `
+    ${filterBar()}
+    <section class="section grid-2" style="grid-template-columns: minmax(0,1fr) minmax(0,1.25fr); align-items:start">
+      <div class="panel pad">
+        <div class="eyebrow">Шаг 1 · соберите состав</div>
+        <h2>Против кого играем?</h2>
+        <div class="sub">Выберите до 6 вражеских героев. Свой герой — по желанию: статистика станет точнее под вашу роль.</div>
+        <div style="margin-top:16px" class="row">
+          <div><div class="team-label sapphire">◆ Ваш герой</div><div class="slots" id="mySlot"></div></div>
+          <div><div class="team-label amber">◆ Вражеская команда</div><div class="slots" id="enemySlots"></div></div>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <div class="seg"><button data-mode="enemy" class="${sel.mode === 'enemy' ? 'on' : ''}">Выбираю врагов</button><button data-mode="mine" class="${sel.mode === 'mine' ? 'on' : ''}">Выбираю себя</button></div>
+          <span class="spacer"></span>
+          <button class="btn" id="clearBtn">Сбросить</button>
+        </div>
+        <div class="row" style="margin:14px 0 10px">
+          <input type="search" id="pq" placeholder="Поиск…" style="flex:1;min-width:120px" />
+          ${[['all', 'Все'], ...ROLE_ORDER.map((r) => [r, ROLES[r].ru])].map(([v, l]) => `<button class="chip ${sel.role === v ? 'on' : ''}" data-prole="${v}">${l}</button>`).join('')}
+        </div>
+        <div class="picker" id="picker"></div>
+      </div>
+      <div id="results"></div>
+    </section>`;
+  bindFilterBar(root);
+
+  const drawSlots = () => {
+    const slot = (id, cls, i) =>
+      id
+        ? `<div class="slotbox filled ${cls}" data-remove="${cls === 'mine' ? 'mine' : i}" title="Убрать">${heroImg(hero(id))}<span class="x">✕</span></div>`
+        : `<div class="slotbox ${cls}">+</div>`;
+    root.querySelector('#mySlot').innerHTML = slot(sel.mine, 'mine');
+    root.querySelector('#enemySlots').innerHTML = Array.from({ length: 6 }, (_, i) => slot(sel.enemies[i], '', i)).join('');
+    root.querySelectorAll('.slotbox .hicon').forEach((i) => (i.style.cssText = 'width:100%;height:100%;border:0;border-radius:0'));
+  };
+  const drawPicker = () => {
+    const q = sel.q.toLowerCase();
+    root.querySelector('#picker').innerHTML = A.heroes
+      .filter((h) => (sel.role === 'all' || h.type === sel.role) && (!q || h.en.toLowerCase().includes(q) || h.ru.toLowerCase().includes(q)))
+      .sort((a, b) => hName(a).localeCompare(hName(b)))
+      .map((h) => {
+        const on = sel.enemies.includes(h.id), mine = sel.mine === h.id;
+        return `<button class="pick ${on ? 'on' : ''} ${mine ? 'mine' : ''} ${(sel.mode === 'enemy' && sel.enemies.length >= 6 && !on) ? 'dim' : ''}" data-pick="${h.id}" title="${esc(hName(h))}">
+          <img src="${esc(h.img.sm || h.img.card)}" alt="" loading="lazy" /><span class="lbl">${esc(hName(h))}</span></button>`;
+      })
+      .join('');
+  };
+  const update = () => {
+    writeQuery();
+    drawSlots();
+    drawPicker();
+    renderResults(root.querySelector('#results'), alive);
+  };
+
+  // слушатель вешаем на секцию, а не на #app — она пересоздаётся при каждой отрисовке
+  root.querySelector('section.grid-2').addEventListener('click', (e) => {
+    const p = e.target.closest('[data-pick]');
+    if (p) {
+      const id = +p.dataset.pick;
+      if (sel.mode === 'mine') {
+        sel.mine = sel.mine === id ? null : id;
+        sel.enemies = sel.enemies.filter((x) => x !== id);
+      } else if (sel.enemies.includes(id)) sel.enemies = sel.enemies.filter((x) => x !== id);
+      else if (sel.enemies.length < 6) {
+        sel.enemies.push(id);
+        if (sel.mine === id) sel.mine = null;
+      }
+      return update();
+    }
+    const r = e.target.closest('[data-remove]');
+    if (r) {
+      if (r.dataset.remove === 'mine') sel.mine = null;
+      else sel.enemies.splice(+r.dataset.remove, 1);
+      return update();
+    }
+    const m = e.target.closest('[data-mode]');
+    if (m) {
+      sel.mode = m.dataset.mode;
+      root.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('on', b === m));
+      return drawPicker();
+    }
+    const pr = e.target.closest('[data-prole]');
+    if (pr) {
+      sel.role = pr.dataset.prole;
+      root.querySelectorAll('[data-prole]').forEach((b) => b.classList.toggle('on', b === pr));
+      return drawPicker();
+    }
+    if (e.target.closest('#clearBtn')) {
+      sel.enemies = [];
+      sel.mine = null;
+      return update();
+    }
+  });
+  root.querySelector('#pq').addEventListener('input', (e) => { sel.q = e.target.value; drawPicker(); });
+  update();
+}
+
+let resultsToken = 0;
+async function renderResults(el, alive) {
+  const token = ++resultsToken;
+  const live = () => alive() && token === resultsToken;
+  if (!sel.enemies.length) {
+    el.innerHTML = `<div class="panel pad"><div class="eyebrow">Шаг 2</div><h2>Рекомендации появятся здесь</h2>
+      <p class="prose">Добавьте хотя бы одного вражеского героя. Мы покажем:</p>
+      <ul class="prose"><li><b>профиль угроз</b> состава — хил, спирит-бёрст, контроль, мобильность и т. д.;</li>
+      <li><b>контр-предметы</b> под каждую угрозу с объяснением, зачем они нужны;</li>
+      <li><b>предметы по статистике</b> — у каких покупок винрейт растёт именно против этих героев.</li></ul></div>`;
+    return;
+  }
+
+  // 1. Профиль угроз (мгновенно, без API)
+  const threatMap = new Map();
+  for (const id of sel.enemies) {
+    (HERO_THREATS[id] || []).forEach((t, i) => {
+      const v = threatMap.get(t) || { key: t, heroes: [], weight: 0 };
+      v.heroes.push(id);
+      v.weight += 1 - i * 0.15; // первая угроза героя — основная
+      threatMap.set(t, v);
+    });
+  }
+  const threats = [...threatMap.values()].sort((a, b) => b.weight - a.weight);
+
+  el.innerHTML = `<div class="panel">
+      <div class="sec-head"><div><div class="eyebrow">Шаг 2 · анализ состава</div><h2>Угрозы вражеской команды</h2></div></div>
+      <div style="padding:0 20px 16px" class="threats">${threats
+        .map(
+          (t) => `<div class="threat" data-tip="${esc(THREATS[t.key].why)}"><div class="lvl">${Array.from({ length: 6 }, (_, i) => `<i class="${i < t.heroes.length ? 'on' : ''}"></i>`).join('')}</div>
+            <div><b>${THREATS[t.key].short}</b><div class="who">${t.heroes.map((id) => heroImg(hero(id), 'sm')).join('')}</div></div></div>`,
+        )
+        .join('')}</div>
+      <div id="recs">${loading('Сравниваем винрейт предметов против выбранных героев…')}</div>
+    </div>`;
+  el.querySelectorAll('.who .hicon').forEach((i) => (i.style.cssText = 'width:20px;height:20px;border-radius:4px'));
+
+  // 2. Статистика: винрейт предмета против каждого врага vs базовый
+  let deltas;
+  try {
+    const base = statParams({ hero_id: sel.mine || undefined });
+    const [baseline, ...perEnemy] = await Promise.all([
+      api('/v1/analytics/item-stats', base),
+      ...sel.enemies.map((e) => api('/v1/analytics/item-stats', { ...base, enemy_hero_ids: e })),
+    ]);
+    const minM = sel.mine ? 40 : 300;
+    const baseMap = new Map(baseline.filter((r) => r.matches >= minM).map((r) => [r.item_id, r]));
+    deltas = new Map();
+    perEnemy.forEach((rows) => {
+      // Против сильного героя винрейт ниже у всех предметов — вычитаем этот общий сдвиг,
+      // чтобы осталось только то, насколько предмет лучше других именно против него.
+      let wv = 0, mv = 0, wb = 0, mb = 0;
+      for (const r of rows) {
+        const b = baseMap.get(r.item_id);
+        if (!b) continue;
+        wv += r.wins; mv += r.matches; wb += b.wins; mb += b.matches;
+      }
+      const shift = mv && mb ? wv / mv - wb / mb : 0;
+      for (const r of rows) {
+        const b = baseMap.get(r.item_id);
+        if (!b || r.matches < minM || !A.itemById.has(r.item_id)) continue;
+        const d = r.wins / r.matches - b.wins / b.matches - shift;
+        const v = deltas.get(r.item_id) || { sum: 0, n: 0, matches: 0, wins: 0 };
+        v.sum += d;
+        v.n++;
+        v.matches += r.matches;
+        v.wins += r.wins;
+        deltas.set(r.item_id, v);
+      }
+    });
+  } catch (e) {
+    if (live()) el.querySelector('#recs').innerHTML = `<div style="padding:0 20px 20px">${errorBox(e)}</div>`;
+    return;
+  }
+  if (!live()) return;
+
+  const dOf = (itemId) => {
+    const v = deltas.get(itemId);
+    return v && v.n ? v.sum / v.n : null;
+  };
+  const deltaRight = (d, v) =>
+    d == null
+      ? '<span class="muted">—</span><small>мало данных</small>'
+      : `<span class="${d > 0.003 ? 'good' : d < -0.003 ? 'bad' : ''}">${d > 0 ? '+' : ''}${(d * 100).toFixed(1)}</span><small>WR ${pct(v.wins / v.matches)}</small>`;
+
+  // рекомендации по угрозам — сортируем предметы внутри группы по статистике
+  const used = new Set();
+  const groups = threats.slice(0, 4).map((t) => {
+    const def = THREATS[t.key];
+    const items = def.items
+      .map((cls) => A.itemByCls.get(cls))
+      .filter(Boolean)
+      .map((it) => ({ it, d: dOf(it.id), v: deltas.get(it.id) }))
+      .sort((a, b) => (b.d ?? -1) - (a.d ?? -1))
+      .slice(0, 4);
+    items.forEach((x) => used.add(x.it.id));
+    const names = t.heroes.map((id) => esc(hName(hero(id)))).join(', ');
+    return `<div class="rec-group"><h3>${def.ru} <span class="pill neutral" style="font-size:11px">${t.heroes.length} из ${sel.enemies.length}</span></h3>
+      <p>${esc(def.why)} <span class="muted">Источник угрозы: ${names}.</span></p>
+      <div class="item-grid">${items.map((x) => itemCard(x.it, { sub: `${fmtNum(x.it.cost)} душ · тир ${x.it.tier}`, right: deltaRight(x.d, x.v) })).join('')}</div></div>`;
+  });
+
+  const stat = [...deltas.entries()]
+    .map(([id, v]) => ({ it: A.itemById.get(id), d: v.sum / v.n, v }))
+    .filter((x) => x.v.n >= Math.ceil(sel.enemies.length / 2) && x.d > 0.004)
+    .sort((a, b) => b.d - a.d)
+    .slice(0, 12);
+
+  el.querySelector('#recs').innerHTML = `
+    <div class="rec-group" style="background:color-mix(in srgb,var(--accent) 5%,transparent)">
+      <div class="eyebrow">Шаг 3 · что собирать</div>
+      <p style="margin-top:6px">Справа у предмета — <b>эффективность против состава</b>: на сколько процентных пунктов предмет выигрывает чаще против этих героев, чем обычно, с поправкой на общую силу врагов${sel.mine ? ` (только матчи на ${esc(hName(hero(sel.mine)))})` : ''}. Ниже — фактический винрейт с предметом.</p>
+    </div>
+    ${groups.join('')}
+    <div class="rec-group"><h3>По статистике матчей</h3>
+      <p>Предметы, которые сильнее всего поднимают винрейт именно против этого состава — даже если они не «классический» контр-пик.</p>
+      <div class="item-grid">${stat.map((x) => itemCard(x.it, { reason: used.has(x.it.id) ? '' : itemReason(x.it), sub: `${fmtNum(x.it.cost)} душ`, right: deltaRight(x.d, x.v) })).join('') || '<div class="muted">Недостаточно данных — попробуйте расширить период или ранг.</div>'}</div>
+    </div>`;
+}
