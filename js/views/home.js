@@ -1,5 +1,5 @@
 // Главная: приветствие, мета по ролям (как колонки позиций у D2PT), последний патч, топ связок.
-import { sampleWarning, getMeta, filterBar, bindFilterBar, loading, errorBox, esc, pct, fmtNum, hName, heroImg, heroLink, tierBadge, wrClass, patchInfo, periodLabel, rankLabel, timeAgo, hero, statParams, ensureHeroes } from '../core.js';
+import { L, tx, rolesName, sampleWarning, getMeta, filterBar, bindFilterBar, loading, errorBox, esc, pct, fmtNum, hName, heroImg, heroLink, tierBadge, wrClass, patchInfo, periodLabel, rankLabel, timeAgo, hero, statParams, ensureHeroes } from '../core.js';
 import { ROLES, ROLE_ORDER } from '../knowledge.js';
 import { loadPatches, latestBalancePatch } from '../patches.js';
 import { api } from '../api.js';
@@ -24,7 +24,7 @@ export async function render(root, { alive }) {
   const roleCol = (type) => {
     const list = meta.list.filter((x) => x.hero.type === type).slice(0, 6);
     return `<div class="role-col">
-      <div class="role-col-head"><b><span class="dot" style="width:8px;height:8px;border-radius:50%;background:${ROLES[type].color}"></span>${ROLES[type].ru}</b><small>матчи · WR · тир</small></div>
+      <div class="role-col-head"><b><span class="dot" style="width:8px;height:8px;border-radius:50%;background:${ROLES[type].color}"></span>${rolesName(type)}</b><small>${L('матчи · WR · тир', 'matches · WR · tier')}</small></div>
       ${list
         .map(
           (x, i) => `<a class="mini-row" href="#/hero/${x.id}">
@@ -44,34 +44,34 @@ export async function render(root, { alive }) {
     ${sampleWarning(meta)}
     <section class="section panel hero-panel">
       <div style="z-index:1">
-        <div class="eyebrow">Deadlock · аналитика матчей</div>
-        <h1 style="margin-top:8px">Добро пожаловать в SoulScope</h1>
-        <p>SoulScope собирает статистику публичных матчей и превращает её в понятные решения: кого пикать, что собирать против конкретного состава, что поменял последний патч и с кем выходить на линию.</p>
+        <div class="eyebrow">${L('Deadlock · аналитика матчей', 'Deadlock · match analytics')}</div>
+        <h1 style="margin-top:8px">${L('Добро пожаловать в SoulScope', 'Welcome to SoulScope')}</h1>
+        <p>${L('SoulScope собирает статистику публичных матчей и превращает её в понятные решения: кого пикать, что собирать против конкретного состава, что поменял последний патч и с кем выходить на линию.', 'SoulScope collects public match statistics and turns them into clear decisions: who to pick, what to build against a specific lineup, what the latest patch changed and who to lane with.')}</p>
         <div class="stat-chips">
-          <span>Проанализировано <b>${fmtNum(meta.totalMatches)}</b> матчей · ${esc(periodLabel())} · ${esc(rankLabel())}</span>
-          ${best ? `<span>Лучший WR: ${heroImg(best.hero, 'sm')}<b>${esc(hName(best.hero))}</b> <span class="good">${pct(best.wr)}</span></span>` : ''}
-          ${popular ? `<span>Самый популярный: ${heroImg(popular.hero, 'sm')}<b>${esc(hName(popular.hero))}</b> ${pct(popular.pick, 0)} матчей</span>` : ''}
-          ${riser ? `<span>Растёт: ${heroImg(riser.hero, 'sm')}<b>${esc(hName(riser.hero))}</b> <span class="good">+${(riser.dwr * 100).toFixed(1)}</span></span>` : ''}
+          <span>${L('Проанализировано', 'Analyzed')} <b>${fmtNum(meta.totalMatches)}</b> ${L('матчей', 'matches')} · ${esc(periodLabel())} · ${esc(rankLabel())}</span>
+          ${best ? `<span>${L('Лучший WR', 'Best WR')}: ${heroImg(best.hero, 'sm')}<b>${esc(hName(best.hero))}</b> <span class="good">${pct(best.wr)}</span></span>` : ''}
+          ${popular ? `<span>${L('Самый популярный', 'Most popular')}: ${heroImg(popular.hero, 'sm')}<b>${esc(hName(popular.hero))}</b> ${pct(popular.pick, 0)} ${L('матчей', 'of matches')}</span>` : ''}
+          ${riser ? `<span>${L('Растёт', 'Rising')}: ${heroImg(riser.hero, 'sm')}<b>${esc(hName(riser.hero))}</b> <span class="good">+${(riser.dwr * 100).toFixed(1)}</span></span>` : ''}
         </div>
       </div>
       <a class="patch-card" href="#/patches">
-        <div class="k">Текущий патч</div>
+        <div class="k">${L('Текущий патч', 'Current patch')}</div>
         <div class="v">${esc(patchInfo.title || '—')}</div>
-        <div class="ago">${patchInfo.date ? esc(timeAgo(patchInfo.date)) : 'загрузка…'}</div>
+        <div class="ago">${patchInfo.date ? esc(timeAgo(patchInfo.date)) : L('загрузка…', 'loading…')}</div>
       </a>
     </section>
 
     <section class="section panel">
       <div class="sec-head">
-        <div><div class="eyebrow">Мета · ${esc(periodLabel())}</div><h2>Сильнейшие герои по ролям</h2><div class="sub">Рейтинг учитывает винрейт (сглаженный по объёму матчей) и популярность.</div></div>
-        <a class="btn" href="#/tier">Полный тир-лист →</a>
+        <div><div class="eyebrow">${L('Мета', 'Meta')} · ${esc(periodLabel())}</div><h2>${L('Сильнейшие герои по ролям', 'Strongest heroes by role')}</h2><div class="sub">${L('Рейтинг учитывает винрейт (сглаженный по объёму матчей) и популярность.', 'The rating combines win rate (smoothed by sample size) and popularity.')}</div></div>
+        <a class="btn" href="#/tier">${L('Полный тир-лист →', 'Full tier list →')}</a>
       </div>
       <div class="role-cols">${ROLE_ORDER.map(roleCol).join('')}</div>
     </section>
 
     <section class="section grid-2">
-      <div class="panel" id="homePatch">${loading('Читаем патчноуты…')}</div>
-      <div class="panel" id="homeDuos">${loading('Считаем связки…')}</div>
+      <div class="panel" id="homePatch">${loading(L('Читаем патчноуты…', 'Reading patch notes…'))}</div>
+      <div class="panel" id="homeDuos">${loading(L('Считаем связки…', 'Counting duos…'))}</div>
     </section>
   `;
   bindFilterBar(root);
@@ -90,13 +90,13 @@ async function renderPatchTeaser(el, alive) {
     const group = (title, list, cls) =>
       list.length
         ? `<div style="margin-top:12px"><div class="pill ${cls}" style="display:inline-block">${title} · ${list.length}</div>
-            <div class="row" style="margin-top:8px">${list.map((h) => `<a href="#/hero/${h.id}" data-tip="${esc(hName(hero(h.id)))}: ${esc(h.tldr)}">${heroImg(hero(h.id))}</a>`).join('')}</div></div>`
+            <div class="row" style="margin-top:8px">${list.map((h) => `<a href="#/hero/${h.id}" data-tip="${esc(hName(hero(h.id)))}: ${esc(tx(h.tldr))}">${heroImg(hero(h.id))}</a>`).join('')}</div></div>`
         : '';
-    el.innerHTML = `<div class="sec-head"><div><div class="eyebrow">Патч-трекер</div><h2>${esc(p.title)}</h2><div class="sub">${esc(timeAgo(p.date))}</div></div><a class="btn" href="#/patches">Все изменения →</a></div>
+    el.innerHTML = `<div class="sec-head"><div><div class="eyebrow">${L('Патч-трекер', 'Patch tracker')}</div><h2>${esc(p.title)}</h2><div class="sub">${esc(timeAgo(p.date))}</div></div><a class="btn" href="#/patches">${L('Все изменения →', 'All changes →')}</a></div>
       <div style="padding:0 20px 18px">
-        ${p.curated ? `<p class="prose" style="margin:0">${esc(p.curated.tldr)}</p>` : ''}
-        ${group('Баффы', buffs, 'buff')}${group('Нерфы', nerfs, 'nerf')}${group('Смешанные', mixed, 'mixed')}
-        ${!p.heroes.length && !p.curated ? '<div class="muted">В этом патче нет правок героев.</div>' : ''}
+        ${p.curated ? `<p class="prose" style="margin:0">${esc(L(p.curated.tldr, p.curated.tldrEn || p.curated.tldr))}</p>` : ''}
+        ${group(L('Баффы', 'Buffs'), buffs, 'buff')}${group(L('Нерфы', 'Nerfs'), nerfs, 'nerf')}${group(L('Смешанные', 'Mixed'), mixed, 'mixed')}
+        ${!p.heroes.length && !p.curated ? `<div class="muted">${L('В этом патче нет правок героев.', 'This patch has no hero changes.')}</div>` : ''}
       </div>`;
   } catch (e) {
     if (alive()) el.innerHTML = `<div class="pad">${errorBox(e)}</div>`;
@@ -114,14 +114,14 @@ async function renderDuoTeaser(el, alive, meta) {
       .map((r) => ({ ...r, wr: r.wins / r.matches_played }))
       .sort((a, b) => b.wr - a.wr)
       .slice(0, 6);
-    el.innerHTML = `<div class="sec-head"><div><div class="eyebrow">Линия</div><h2>Лучшие связки на линии</h2><div class="sub">Пары союзников на одной линии, мин. ${fmtNum(minM)} матчей</div></div><a class="btn" href="#/duos">Все связки →</a></div>
+    el.innerHTML = `<div class="sec-head"><div><div class="eyebrow">${L('Линия', 'Lane')}</div><h2>${L('Лучшие связки на линии', 'Best lane duos')}</h2><div class="sub">${L(`Пары союзников на одной линии, мин. ${fmtNum(minM)} матчей`, `Allied pairs in the same lane, min. ${fmtNum(minM)} matches`)}</div></div><a class="btn" href="#/duos">${L('Все связки →', 'All duos →')}</a></div>
       <div class="mu-list" style="border-top:1px solid var(--line)">
         ${top
           .map(
             (r) => `<div class="mu"><div class="pair-cell">${heroLink(hero(r.hero_id1), { cls: 'sm' })}<span class="plus">+</span>${heroLink(hero(r.hero_id2), { cls: 'sm' })}</div>
-              <span class="m num">${fmtNum(r.matches_played)} игр</span><b class="num good">${pct(r.wr)}</b></div>`,
+              <span class="m num">${fmtNum(r.matches_played)} ${L('игр', 'games')}</span><b class="num good">${pct(r.wr)}</b></div>`,
           )
-          .join('') || '<div class="empty">Недостаточно данных</div>'}
+          .join('') || `<div class="empty">${L('Недостаточно данных', 'Not enough data')}</div>`}
       </div>`;
   } catch (e) {
     if (alive()) el.innerHTML = `<div class="pad">${errorBox(e)}</div>`;

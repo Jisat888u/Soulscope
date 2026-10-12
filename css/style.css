@@ -72,6 +72,46 @@
   color-scheme: light;
 }
 
+/* «Души»: глубокая ночь и бирюзовое свечение сфер душ */
+:root[data-theme='souls'] {
+  --bg: #060f11;
+  --bg-2: #091619;
+  --panel: #0d1b1e;
+  --panel-2: #112328;
+  --panel-3: #162d33;
+  --line: #1c3940;
+  --line-2: #285159;
+  --text: #e3f5f3;
+  --text-2: #b4d6d3;
+  --muted: #6f9a98;
+  --cream: #a6ece9;
+  --accent: #62e0dd;
+  --accent-ink: #04191b;
+  --rust: #f0a35a;
+  --good: #8fd67a;
+  --bad: #ef7a62;
+  --warn: #e8c15a;
+  --t-splus: #8ff0ea;
+  --t-s: #f0b45e;
+  --t-a: #c6d46e;
+  --t-b: #6cc69a;
+  --t-c: #8a9ec0;
+  --t-d: #b57a6a;
+  --chart-1: #1f9da3;
+  --chart-hi: #c0832a;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(98, 224, 221, 0.04);
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.9 0 0 0 0 0.9 0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  color-scheme: dark;
+}
+:root[data-theme='souls'] body {
+  background-image:
+    radial-gradient(1200px 520px at 50% -120px, color-mix(in srgb, var(--accent) 13%, transparent), transparent 70%),
+    radial-gradient(600px 400px at 100% 100%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 70%),
+    var(--grain);
+  background-attachment: fixed;
+}
+:root[data-theme='souls'] .logo-mark { filter: hue-rotate(140deg) saturate(1.2); }
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {

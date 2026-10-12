@@ -1,24 +1,24 @@
 // Страница героя: сборка по фазам, ситуативные предметы, прокачка, матчапы, способности.
 import { api } from '../api.js';
 import { renderPowerCurve } from './power-curve.js';
-import { A, state, getMeta, hero, filterBar, bindFilterBar, loading, errorBox, esc, pct, fmtNum, hName, heroLink, tierBadge, deltaHtml, wrClass, itemCard, itemReason, statParams, roleName, periodLabel, rankLabel, ensureHeroes } from '../core.js';
+import { A, state, L, getMeta, hero, filterBar, bindFilterBar, loading, errorBox, esc, pct, fmtNum, hName, heroLink, tierBadge, deltaHtml, wrClass, itemCard, itemReason, statParams, roleName, periodLabel, rankLabel, ensureHeroes } from '../core.js';
 
 const PHASES = [
-  { key: 'start', label: 'Старт', sub: '0–5 мин', max: 300, minUse: 0.15 },
-  { key: 'early', label: 'Ранняя игра', sub: '5–15 мин', max: 900, minUse: 0.15 },
-  { key: 'mid', label: 'Мидгейм', sub: '15–25 мин', max: 1500, minUse: 0.1 },
-  { key: 'late', label: 'Поздняя игра', sub: '25+ мин', max: Infinity, minUse: 0.05 },
+  { key: 'start', label: ['Старт', 'Start'], sub: '0–5', max: 300, minUse: 0.15 },
+  { key: 'early', label: ['Ранняя игра', 'Early game'], sub: '5–15', max: 900, minUse: 0.15 },
+  { key: 'mid', label: ['Мидгейм', 'Mid game'], sub: '15–25', max: 1500, minUse: 0.1 },
+  { key: 'late', label: ['Поздняя игра', 'Late game'], sub: '25+', max: Infinity, minUse: 0.05 },
 ];
 const phaseOf = (t) => PHASES.find((p) => t < p.max);
 
 export async function render(root, { args, alive }) {
   const id = +args[0];
-  root.innerHTML = filterBar() + loading('Собираем билд героя…');
+  root.innerHTML = filterBar() + loading(L('Собираем билд героя…', 'Building the hero build…'));
   bindFilterBar(root);
   await ensureHeroes([id]);
   const h = hero(id);
   if (h.missing) {
-    root.innerHTML = `<div class="empty">Герой не найден. <a class="btn" href="#/heroes">К списку героев</a></div>`;
+    root.innerHTML = `<div class="empty">${L('Герой не найден.', 'Hero not found.')} <a class="btn" href="#/heroes">${L('К списку героев', 'Back to heroes')}</a></div>`;
     return;
   }
 
@@ -53,44 +53,44 @@ export async function render(root, { args, alive }) {
         ${desc ? `<div class="desc">${esc(desc)}</div>` : ''}
       </div>
       <div class="kpis">
-        <div class="kpi"><div class="k">Тир</div><div class="v">${m ? `${tierBadge(m.tier)} <span class="muted" style="font-size:13px">${m.rating}/100</span>` : '—'}</div></div>
-        <div class="kpi"><div class="k">Винрейт</div><div class="v ${m ? wrClass(m.wr) : ''}">${m ? pct(m.wr) : '—'} <span style="font-size:12px">${m ? deltaHtml(m.dwr) : ''}</span></div></div>
-        <div class="kpi"><div class="k">Пикрейт</div><div class="v">${m ? pct(m.pick) : '—'}</div></div>
-        <div class="kpi"><div class="k">Матчи</div><div class="v">${m ? fmtNum(m.matches) : '—'}</div></div>
+        <div class="kpi"><div class="k">${L('Тир', 'Tier')}</div><div class="v">${m ? `${tierBadge(m.tier)} <span class="muted" style="font-size:13px">${m.rating}/100</span>` : '—'}</div></div>
+        <div class="kpi"><div class="k">${L('Винрейт', 'Win rate')}</div><div class="v ${m ? wrClass(m.wr) : ''}">${m ? pct(m.wr) : '—'} <span style="font-size:12px">${m ? deltaHtml(m.dwr) : ''}</span></div></div>
+        <div class="kpi"><div class="k">${L('Пикрейт', 'Pick rate')}</div><div class="v">${m ? pct(m.pick) : '—'}</div></div>
+        <div class="kpi"><div class="k">${L('Матчи', 'Matches')}</div><div class="v">${m ? fmtNum(m.matches) : '—'}</div></div>
         <div class="kpi"><div class="k">KDA</div><div class="v">${m ? `${m.kills.toFixed(1)}/${m.deaths.toFixed(1)}/${m.assists.toFixed(1)}` : '—'}</div></div>
-        <div class="kpi"><div class="k">Души / матч</div><div class="v">${m ? fmtNum(m.nw) : '—'}</div></div>
+        <div class="kpi"><div class="k">${L('Души / матч', 'Souls / match')}</div><div class="v">${m ? fmtNum(m.nw) : '—'}</div></div>
       </div>
     </section>
 
     <section class="section panel">
-      <div class="sec-head"><div><div class="eyebrow">Сила по ходу матча · ${esc(periodLabel())} · ${esc(rankLabel())}</div><h2>Когда герой сильнее</h2>
-        <div class="sub">Винрейт в зависимости от длительности матча: герои ранней игры выигрывают короткие матчи, лейт-герои — затяжные.</div></div></div>
+      <div class="sec-head"><div><div class="eyebrow">${L('Сила по ходу матча', 'Power over the match')} · ${esc(periodLabel())} · ${esc(rankLabel())}</div><h2>${L('Когда герой сильнее', 'When the hero is strongest')}</h2>
+        <div class="sub">${L('Винрейт в зависимости от длительности матча: герои ранней игры выигрывают короткие матчи, лейт-герои — затяжные.', 'Win rate by match length: early-game heroes win short matches, late-game heroes win long ones.')}</div></div></div>
       <div id="powerCurve"></div>
     </section>
 
     <section class="section panel">
-      <div class="sec-head"><div><div class="eyebrow">Сборка · ${esc(periodLabel())} · ${esc(rankLabel())}</div><h2>Актуальный билд</h2>
-        <div class="sub">Самые покупаемые предметы в каждой фазе. Фаза — по среднему времени покупки. Справа: винрейт с предметом и доля матчей, где его купили.</div></div></div>
+      <div class="sec-head"><div><div class="eyebrow">${L('Сборка', 'Build')} · ${esc(periodLabel())} · ${esc(rankLabel())}</div><h2>${L('Актуальный билд', 'Current build')}</h2>
+        <div class="sub">${L('Самые покупаемые предметы в каждой фазе. Фаза — по среднему времени покупки. Справа: винрейт с предметом и доля матчей, где его купили.', 'The most purchased items in each phase, by average purchase time. On the right: win rate with the item and the share of matches where it was bought.')}</div></div></div>
       <div class="phases" id="phases"></div>
     </section>
 
     <section class="section grid-2">
-      <div class="panel"><div class="sec-head"><div><div class="eyebrow">По ситуации</div><h2>Ситуативные предметы</h2>
-        <div class="sub">Берут реже, но они заметно поднимают винрейт относительно других предметов той же фазы.</div></div></div>
+      <div class="panel"><div class="sec-head"><div><div class="eyebrow">${L('По ситуации', 'Situational')}</div><h2>${L('Ситуативные предметы', 'Situational items')}</h2>
+        <div class="sub">${L('Берут реже, но они заметно поднимают винрейт относительно других предметов той же фазы.', 'Bought less often, but they noticeably raise win rate compared to other items of the same phase.')}</div></div></div>
         <div style="padding:0 20px 18px" class="item-list" id="situational"></div></div>
-      <div class="panel"><div class="sec-head"><div><div class="eyebrow">Осторожно</div><h2>Ловушки</h2>
-        <div class="sub">Популярные покупки, с которыми этот герой выигрывает реже, чем с альтернативами.</div></div></div>
+      <div class="panel"><div class="sec-head"><div><div class="eyebrow">${L('Осторожно', 'Careful')}</div><h2>${L('Ловушки', 'Traps')}</h2>
+        <div class="sub">${L('Популярные покупки, с которыми этот герой выигрывает реже, чем с альтернативами.', 'Popular purchases this hero wins less often with than with the alternatives.')}</div></div></div>
         <div style="padding:0 20px 18px" class="item-list" id="traps"></div></div>
     </section>
 
-    <section class="section panel"><div class="sec-head"><div><div class="eyebrow">Способности</div><h2>Порядок прокачки</h2><div class="sub" id="abilSub"></div></div></div>
+    <section class="section panel"><div class="sec-head"><div><div class="eyebrow">${L('Способности', 'Abilities')}</div><h2>${L('Порядок прокачки', 'Skill order')}</h2><div class="sub" id="abilSub"></div></div></div>
       <div style="padding:0 20px 18px" id="skills"></div></section>
 
-    <section class="section grid-3" id="matchups">${loading('Считаем матчапы…')}</section>
+    <section class="section grid-3" id="matchups">${loading(L('Считаем матчапы…', 'Counting matchups…'))}</section>
 
-    ${h.abilities.length ? `<section class="section panel"><div class="sec-head"><div><div class="eyebrow">Кит героя</div><h2>Способности</h2></div></div>
+    ${h.abilities.length ? `<section class="section panel"><div class="sec-head"><div><div class="eyebrow">${L('Кит героя', 'Hero kit')}</div><h2>${L('Способности', 'Abilities')}</h2></div></div>
       <div class="abilities" style="padding:0 20px 20px">${h.abilities
-        .map((a, i) => `<div class="ability"><img src="${esc(a.img)}" alt="" loading="lazy" /><div><div class="key">${i === 3 ? 'УЛЬТИМЕЙТ' : 'СПОСОБНОСТЬ ' + (i + 1)}</div><div class="nm">${esc(state.lang === 'en' ? a.en : a.ru)}</div><div class="tx">${esc(state.lang === 'en' ? a.descEn : a.descRu)}</div></div></div>`)
+        .map((a, i) => `<div class="ability"><img src="${esc(a.img)}" alt="" loading="lazy" /><div><div class="key">${i === 3 ? L('УЛЬТИМЕЙТ', 'ULTIMATE') : L('СПОСОБНОСТЬ ', 'ABILITY ') + (i + 1)}</div><div class="nm">${esc(state.lang === 'en' ? a.en : a.ru)}</div><div class="tx">${esc(state.lang === 'en' ? a.descEn : a.descRu)}</div></div></div>`)
         .join('')}</div></section>` : ''}
   `;
   bindFilterBar(root);
@@ -117,15 +117,16 @@ function renderBuild(root, raw, heroMatches, heroWr) {
   items.forEach((r) => (r.delta = r.wr - phaseAvg[r.phase]));
 
   const core = new Set();
-  const right = (r) => `<span class="${r.delta > 0.01 ? 'good' : r.delta < -0.01 ? 'bad' : ''}">${pct(r.wr)}</span><small>${pct(r.use, 0)} матчей</small>`;
+  const souls = L('душ', 'souls'), ofMatches = L('матчей', 'of matches'), min = L('мин', 'min');
+  const right = (r) => `<span class="${r.delta > 0.01 ? 'good' : r.delta < -0.01 ? 'bad' : ''}">${pct(r.wr)}</span><small>${pct(r.use, 0)} ${ofMatches}</small>`;
   root.querySelector('#phases').innerHTML = PHASES.map((p) => {
     const list = items
       .filter((r) => r.phase === p.key && r.use >= p.minUse)
       .sort((a, b) => b.use - a.use)
       .slice(0, 6);
     list.forEach((r) => core.add(r.item_id));
-    return `<div class="phase"><div class="phase-head"><b>${p.label}</b><small>${p.sub}</small></div>
-      <div class="item-list">${list.map((r) => itemCard(r.item, { sub: `${fmtNum(r.item.cost)} душ · ~${Math.round(r.avg_buy_time_s / 60)} мин`, right: right(r) })).join('') || '<div class="muted" style="font-size:12px">Недостаточно данных</div>'}</div></div>`;
+    return `<div class="phase"><div class="phase-head"><b>${L(...p.label)}</b><small>${p.sub} ${min}</small></div>
+      <div class="item-list">${list.map((r) => itemCard(r.item, { sub: `${fmtNum(r.item.cost)} ${souls} · ~${Math.round(r.avg_buy_time_s / 60)} ${min}`, right: right(r) })).join('') || `<div class="muted" style="font-size:12px">${L('Недостаточно данных', 'Not enough data')}</div>`}</div></div>`;
   }).join('');
 
   const minM = Math.max(40, heroMatches * 0.01);
@@ -134,16 +135,16 @@ function renderBuild(root, raw, heroMatches, heroWr) {
     .sort((a, b) => b.delta - a.delta)
     .slice(0, 10);
   root.querySelector('#situational').innerHTML =
-    situ.map((r) => itemCard(r.item, { reason: itemReason(r.item), sub: `${fmtNum(r.item.cost)} душ · ${pct(r.use, 0)} матчей`, right: `<span class="good">+${(r.delta * 100).toFixed(1)}</span><small>WR ${pct(r.wr)}</small>` })).join('') ||
-    '<div class="muted">Недостаточно данных за выбранный период.</div>';
+    situ.map((r) => itemCard(r.item, { reason: itemReason(r.item), sub: `${fmtNum(r.item.cost)} ${souls} · ${pct(r.use, 0)} ${ofMatches}`, right: `<span class="good">+${(r.delta * 100).toFixed(1)}</span><small>WR ${pct(r.wr)}</small>` })).join('') ||
+    `<div class="muted">${L('Недостаточно данных за выбранный период.', 'Not enough data for the selected period.')}</div>`;
 
   const traps = items
     .filter((r) => r.use >= 0.05 && r.matches >= minM && r.delta < -0.015)
     .sort((a, b) => a.delta - b.delta)
     .slice(0, 6);
   root.querySelector('#traps').innerHTML =
-    traps.map((r) => itemCard(r.item, { sub: `${pct(r.use, 0)} матчей · ~${Math.round(r.avg_buy_time_s / 60)} мин`, right: `<span class="bad">${(r.delta * 100).toFixed(1)}</span><small>WR ${pct(r.wr)}</small>` })).join('') ||
-    '<div class="muted">Явных ловушек не найдено — популярные предметы работают.</div>';
+    traps.map((r) => itemCard(r.item, { sub: `${pct(r.use, 0)} ${ofMatches} · ~${Math.round(r.avg_buy_time_s / 60)} ${min}`, right: `<span class="bad">${(r.delta * 100).toFixed(1)}</span><small>WR ${pct(r.wr)}</small>` })).join('') ||
+    `<div class="muted">${L('Явных ловушек не найдено — популярные предметы работают.', 'No obvious traps — the popular items work.')}</div>`;
 }
 
 function renderSkills(root, h, rows) {
@@ -151,13 +152,16 @@ function renderSkills(root, h, rows) {
   const abIds = new Map(h.abilities.map((a, i) => [a.id, i]));
   const valid = (rows || []).filter((r) => r.abilities?.length && r.abilities.every((a) => abIds.has(a)));
   if (!valid.length || !h.abilities.length) {
-    el.innerHTML = '<div class="muted">Нет данных о прокачке за выбранный период.</div>';
+    el.innerHTML = `<div class="muted">${L('Нет данных о прокачке за выбранный период.', 'No skill order data for the selected period.')}</div>`;
     return;
   }
   // самая популярная (почти) полная последовательность
   const full = valid.filter((r) => r.abilities.length >= 12).sort((a, b) => b.matches - a.matches)[0] || [...valid].sort((a, b) => b.abilities.length - a.abilities.length || b.matches - a.matches)[0];
   const seq = full.abilities;
-  root.querySelector('#abilSub').textContent = `Самая частая полная прокачка: ${fmtNum(full.matches)} матчей, винрейт ${pct(full.wins / full.matches)}. ★ — открытие, цифры — уровень улучшения.`;
+  root.querySelector('#abilSub').textContent = L(
+    `Самая частая полная прокачка: ${fmtNum(full.matches)} матчей, винрейт ${pct(full.wins / full.matches)}. ★ — открытие, цифры — уровень улучшения.`,
+    `Most common full skill order: ${fmtNum(full.matches)} matches, ${pct(full.wins / full.matches)} win rate. ★ — unlock, numbers — upgrade level.`,
+  );
 
   const counts = new Array(h.abilities.length).fill(0);
   const cells = h.abilities.map(() => new Array(seq.length).fill(''));
@@ -188,12 +192,12 @@ function renderSkills(root, h, rows) {
         .map((a, ai) => `<div class="ab"><img src="${esc(a.img)}" alt="" />${esc(abName(a))}</div>${cells[ai].map((c) => `<div class="c ${c === '★' ? 'unlock' : c ? 'on' : ''}">${c}</div>`).join('')}`)
         .join('')}
     </div></div>
-    ${topUnlocks.length ? `<div style="margin-top:16px"><div class="eyebrow" style="margin-bottom:8px">Порядок открытия</div>
+    ${topUnlocks.length ? `<div style="margin-top:16px"><div class="eyebrow" style="margin-bottom:8px">${L('Порядок открытия', 'Unlock order')}</div>
       <div class="row">${topUnlocks
         .map(
           (u) => `<div class="threat"><div class="row" style="gap:4px">${u.order
             .map((abId, i) => { const a = h.abilities[abIds.get(abId)]; return `${i ? '<span class="muted">›</span>' : ''}<img src="${esc(a.img)}" alt="" title="${esc(abName(a))}" style="width:26px;height:26px;border-radius:5px;background:var(--panel-3);padding:2px" />`; })
-            .join('')}</div><div><b class="num ${wrClass(u.wins / u.matches)}">${pct(u.wins / u.matches)}</b><div class="muted" style="font-size:11px">${fmtNum(u.matches)} матчей</div></div></div>`,
+            .join('')}</div><div><b class="num ${wrClass(u.wins / u.matches)}">${pct(u.wins / u.matches)}</b><div class="muted" style="font-size:11px">${fmtNum(u.matches)} ${L('матчей', 'matches')}</div></div></div>`,
         )
         .join('')}</div></div>` : ''}`;
 }
@@ -222,13 +226,13 @@ async function renderMatchups(el, id, heroMatches, alive) {
 
     const list = (rows) =>
       rows.map((r) => `<div class="mu">${heroLink(hero(r.other), { cls: 'sm' })}<span class="m num">${fmtNum(r.n)}</span><b class="num ${wrClass(r.wr)}">${pct(r.wr)}</b></div>`).join('') ||
-      '<div class="empty">Мало данных</div>';
+      `<div class="empty">${L('Мало данных', 'Too little data')}</div>`;
     const box = (eyebrow, title, sub, rows) =>
       `<div class="panel"><div class="sec-head"><div><div class="eyebrow">${eyebrow}</div><h3 style="font-size:18px;margin-top:4px">${title}</h3><div class="sub">${sub}</div></div></div><div class="mu-list" style="border-top:1px solid var(--line)">${list(rows)}</div></div>`;
     el.innerHTML =
-      box('Матчапы', 'Сильнее против', 'Ваш винрейт против этих героев', strong) +
-      box('Матчапы', 'Слабее против', 'Здесь пригодятся контр-предметы', weak) +
-      box('Связки', 'Лучшие напарники на линии', `Плюс лучшие союзники в целом: ${allies.slice(0, 3).map((a) => esc(hName(hero(a.other)))).join(', ') || '—'}`, lanes);
+      box(L('Матчапы', 'Matchups'), L('Сильнее против', 'Strong against'), L('Ваш винрейт против этих героев', 'Your win rate against these heroes'), strong) +
+      box(L('Матчапы', 'Matchups'), L('Слабее против', 'Weak against'), L('Здесь пригодятся контр-предметы', 'Counter items help here'), weak) +
+      box(L('Связки', 'Duos'), L('Лучшие напарники на линии', 'Best lane partners'), `${L('Плюс лучшие союзники в целом', 'Plus the best allies overall')}: ${allies.slice(0, 3).map((a) => esc(hName(hero(a.other)))).join(', ') || '—'}`, lanes);
   } catch (e) {
     if (alive()) el.innerHTML = errorBox(e);
   }

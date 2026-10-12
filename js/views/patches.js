@@ -1,6 +1,6 @@
 // Патч-трекер: список обновлений из Steam (обновляется сам), по героям — бафф/нерф,
 // краткий вывод и реальное изменение винрейта до/после патча.
-import { A, state, hero, loading, errorBox, esc, pct, fmtDate, timeAgo, hName, iName, heroImg, itemIcon, heroStatsWindow, rankLabel, segmented, RANKS, setState } from '../core.js';
+import { A, state, L, tx, hero, loading, errorBox, esc, pct, fmtDate, timeAgo, hName, iName, heroImg, itemIcon, heroStatsWindow, rankLabel, segmented, RANKS, setState } from '../core.js';
 import { loadPatches } from '../patches.js';
 
 const view = { heroFilter: 0, onlyBalance: true, showOrig: false, open: null };
@@ -8,7 +8,7 @@ const DAY = 86400;
 
 export async function render(root, { query, alive }) {
   if (query.get('hero')) view.heroFilter = +query.get('hero');
-  root.innerHTML = loading('Читаем патчноуты…');
+  root.innerHTML = loading(L('Читаем патчноуты…', 'Reading patch notes…'));
   let patches;
   try {
     patches = await loadPatches();
@@ -27,28 +27,28 @@ export async function render(root, { query, alive }) {
 
   root.innerHTML = `
     <div class="filterbar">
-      <label>Ранг (для винрейта)</label>${segmented(RANKS, state.badge, 'badge')}
-      <label>Герой</label><select id="pf"><option value="0">Все герои</option>${heroOptions}</select>
-      <button class="chip ${view.onlyBalance ? 'on' : ''}" id="pb">Баланс и новые герои</button>
-      <button class="chip ${view.showOrig ? 'on' : ''}" id="po">Оригинал (EN)</button>
+      <label>${L('Ранг (для винрейта)', 'Rank (for win rate)')}</label>${segmented(RANKS, state.badge, 'badge')}
+      <label>${L('Герой', 'Hero')}</label><select id="pf"><option value="0">${L('Все герои', 'All heroes')}</option>${heroOptions}</select>
+      <button class="chip ${view.onlyBalance ? 'on' : ''}" id="pb">${L('Баланс и новые герои', 'Balance and new heroes')}</button>
+      ${state.lang === 'en' ? '' : `<button class="chip ${view.showOrig ? 'on' : ''}" id="po">Оригинал (EN)</button>`}
     </div>
     <section class="section">
-      <div class="sec-head bare"><div><div class="eyebrow">Обновляется автоматически из Steam</div><h2>Патч-трекер</h2>
-        <div class="sub">По каждому герою: стал сильнее или слабее, что именно поменяли и как сдвинулся винрейт за неделю до и после патча (${esc(rankLabel())}).</div></div></div>
+      <div class="sec-head bare"><div><div class="eyebrow">${L('Обновляется автоматически из Steam', 'Updated automatically from Steam')}</div><h2>${L('Патч-трекер', 'Patch tracker')}</h2>
+        <div class="sub">${L('По каждому герою: стал сильнее или слабее, что именно поменяли и как сдвинулся винрейт за неделю до и после патча', 'For each hero: stronger or weaker, what exactly changed and how the win rate moved in the week before and after the patch')} (${esc(rankLabel())}).</div></div></div>
       <div id="plist"></div>
     </section>`;
 
   root.querySelectorAll('[data-badge]').forEach((b) => b.addEventListener('click', () => setState({ badge: +b.dataset.badge })));
   root.querySelector('#pf').addEventListener('change', (e) => { view.heroFilter = +e.target.value; draw(); });
   root.querySelector('#pb').addEventListener('click', (e) => { view.onlyBalance = !view.onlyBalance; e.target.classList.toggle('on', view.onlyBalance); draw(); });
-  root.querySelector('#po').addEventListener('click', (e) => { view.showOrig = !view.showOrig; e.target.classList.toggle('on', view.showOrig); root.querySelectorAll('.changes').forEach((c) => c.classList.toggle('compact', !view.showOrig)); });
+  root.querySelector('#po')?.addEventListener('click', (e) => { view.showOrig = !view.showOrig; e.target.classList.toggle('on', view.showOrig); root.querySelectorAll('.changes').forEach((c) => c.classList.toggle('compact', !view.showOrig)); });
 
   const list = root.querySelector('#plist');
   const draw = () => {
     const shown = patches
       .filter((p) => !view.onlyBalance || p.type !== 'news' || p.curated)
       .filter((p) => !view.heroFilter || p.heroes.some((h) => h.id === view.heroFilter));
-    list.innerHTML = shown.map((p) => patchHtml(p)).join('') || '<div class="empty">Нет патчей с изменениями этого героя в доступной истории.</div>';
+    list.innerHTML = shown.map((p) => patchHtml(p)).join('') || `<div class="empty">${L('Нет патчей с изменениями этого героя в доступной истории.', 'No patches with changes to this hero in the available history.')}</div>`;
     list.querySelectorAll('.patch.open').forEach((el) => loadImpact(el, patches.find((p) => p.id === el.dataset.id), alive));
   };
   list.addEventListener('click', (e) => {
@@ -65,23 +65,25 @@ function summaryPills(p) {
   const c = { buff: 0, nerf: 0, mixed: 0, neutral: 0 };
   p.heroes.forEach((h) => c[h.verdict.key]++);
   const pills = [];
-  if (c.buff) pills.push(`<span class="pill buff">▲ ${c.buff} бафф</span>`);
-  if (c.nerf) pills.push(`<span class="pill nerf">▼ ${c.nerf} нерф</span>`);
-  if (c.mixed) pills.push(`<span class="pill mixed">◆ ${c.mixed} смешанно</span>`);
-  if (p.items.length) pills.push(`<span class="pill neutral">${p.items.length} предм.</span>`);
-  if (p.general.length) pills.push(`<span class="pill neutral">${p.general.length} общих</span>`);
+  if (c.buff) pills.push(`<span class="pill buff">▲ ${c.buff} ${L('бафф', c.buff === 1 ? 'buff' : 'buffs')}</span>`);
+  if (c.nerf) pills.push(`<span class="pill nerf">▼ ${c.nerf} ${L('нерф', c.nerf === 1 ? 'nerf' : 'nerfs')}</span>`);
+  if (c.mixed) pills.push(`<span class="pill mixed">◆ ${c.mixed} ${L('смешанно', 'mixed')}</span>`);
+  if (p.items.length) pills.push(`<span class="pill neutral">${p.items.length} ${L('предм.', p.items.length === 1 ? 'item' : 'items')}</span>`);
+  if (p.general.length) pills.push(`<span class="pill neutral">${p.general.length} ${L('общих', 'general')}</span>`);
   return pills.join('');
 }
 
 const changeLi = (c) => {
   const ar = c.effect === 'buff' ? '▲' : c.effect === 'nerf' ? '▼' : c.kind === 'fix' ? '✓' : '•';
-  const label = c.kind !== 'num' && c.label ? `<span class="muted">${esc(c.label)}:</span> ` : '';
-  const body = c.kind === 'num' ? esc(c.text) : esc(c.orig);
-  return `<li class="${c.effect}"><span class="ar">${ar}</span><span>${c.ability ? `<span class="ab">${esc(c.ability)}</span> · ` : ''}${label}${body}${c.kind === 'num' ? `<span class="orig">${esc(c.orig)}</span>` : ''}</span></li>`;
+  const label = c.kind !== 'num' && c.label ? `<span class="muted">${esc(tx(c.label))}:</span> ` : '';
+  const body = c.kind === 'num' ? esc(tx(c.text)) : esc(c.orig);
+  // в английском варианте строка и так оригинальная — второй раз её не показываем
+  const orig = c.kind === 'num' && state.lang !== 'en' ? `<span class="orig">${esc(c.orig)}</span>` : '';
+  return `<li class="${c.effect}"><span class="ar">${ar}</span><span>${c.ability ? `<span class="ab">${esc(c.ability)}</span> · ` : ''}${label}${body}${orig}</span></li>`;
 };
 
 function patchHtml(p) {
-  const typeLabel = p.type === 'news' && p.curated ? 'Новый герой' : { major: 'Крупное обновление', balance: 'Баланс', news: 'Новости' }[p.type];
+  const typeLabel = p.type === 'news' && p.curated ? L('Новый герой', 'New hero') : { major: L('Крупное обновление', 'Major update'), balance: L('Баланс', 'Balance'), news: L('Новости', 'News') }[p.type];
   const heroes = view.heroFilter ? p.heroes.filter((h) => h.id === view.heroFilter) : p.heroes;
   const open = view.open === p.id || !!view.heroFilter;
   return `<div class="panel patch ${open ? 'open' : ''}" data-id="${esc(p.id)}">
@@ -95,12 +97,12 @@ function patchHtml(p) {
       <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
     </div>
     <div class="patch-body">
-      ${p.curated ? `<div class="curated"><b>Коротко:</b> ${esc(p.curated.tldr)}<ul>${p.curated.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul></div>` : ''}
+      ${p.curated ? `<div class="curated"><b>${L('Коротко:', 'In short:')}</b> ${esc(L(p.curated.tldr, p.curated.tldrEn || p.curated.tldr))}<ul>${L(p.curated.bullets, p.curated.bulletsEn || p.curated.bullets).map((b) => `<li>${esc(b)}</li>`).join('')}</ul></div>` : ''}
       ${p.type !== 'balance' && p.paragraphs.length ? `<div class="prose" style="margin-top:12px">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" style="max-height:220px" />` : ''}${p.paragraphs.slice(0, 4).map((t) => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
-      ${heroes.length ? `<div class="notes-block"><h3>Герои</h3><div class="hero-changes">${heroes.map((h) => heroChangeHtml(h)).join('')}</div></div>` : ''}
-      ${p.items.length && !view.heroFilter ? `<div class="notes-block"><h3>Предметы</h3><div class="hero-changes">${p.items.map(itemChangeHtml).join('')}</div></div>` : ''}
-      ${p.general.length && !view.heroFilter ? `<div class="notes-block"><h3>Общие изменения</h3><ul class="changes ${view.showOrig ? '' : 'compact'} panel" style="background:var(--panel-2)">${p.general.map(changeLi).join('')}</ul></div>` : ''}
-      <div class="note" style="margin-top:14px"><a href="${esc(p.link)}" target="_blank" rel="noopener">Оригинальные патчноуты в Steam ↗</a></div>
+      ${heroes.length ? `<div class="notes-block"><h3>${L('Герои', 'Heroes')}</h3><div class="hero-changes">${heroes.map((h) => heroChangeHtml(h)).join('')}</div></div>` : ''}
+      ${p.items.length && !view.heroFilter ? `<div class="notes-block"><h3>${L('Предметы', 'Items')}</h3><div class="hero-changes">${p.items.map(itemChangeHtml).join('')}</div></div>` : ''}
+      ${p.general.length && !view.heroFilter ? `<div class="notes-block"><h3>${L('Общие изменения', 'General changes')}</h3><ul class="changes ${view.showOrig ? '' : 'compact'} panel" style="background:var(--panel-2)">${p.general.map(changeLi).join('')}</ul></div>` : ''}
+      <div class="note" style="margin-top:14px"><a href="${esc(p.link)}" target="_blank" rel="noopener">${L('Оригинальные патчноуты в Steam ↗', 'Original patch notes on Steam ↗')}</a></div>
     </div>
   </div>`;
 }
@@ -110,9 +112,9 @@ function heroChangeHtml(h) {
   return `<div class="hchange ${h.verdict.key}" data-hero="${h.id}">
     <div class="hchange-head">
       <a class="hero-link" href="#/hero/${h.id}">${heroImg(he)}<span class="hname">${esc(hName(he))}</span></a>
-      <div class="verdict"><span class="pill ${h.verdict.key}">${esc(h.verdict.label)}</span><div class="wr" data-wr>винрейт: …</div></div>
+      <div class="verdict"><span class="pill ${h.verdict.key}">${esc(tx(h.verdict.label))}</span><div class="wr" data-wr>${L('винрейт', 'win rate')}: …</div></div>
     </div>
-    <div class="tldr">${esc(h.tldr)}</div>
+    <div class="tldr">${esc(tx(h.tldr))}</div>
     <ul class="changes ${view.showOrig ? '' : 'compact'}">${h.changes.map(changeLi).join('')}</ul>
   </div>`;
 }
@@ -121,8 +123,8 @@ function itemChangeHtml(i) {
   const it = A.itemById.get(i.id);
   return `<div class="hchange ${i.verdict.key}">
     <div class="hchange-head"><span class="item" style="all:unset;display:flex;gap:10px;align-items:center" data-item="${i.id}">${it ? itemIcon(it) : ''}<b>${esc(it ? iName(it) : '')}</b></span>
-      <div class="verdict"><span class="pill ${i.verdict.key}">${esc(i.verdict.label)}</span></div></div>
-    <div class="tldr">${esc(i.tldr)}</div>
+      <div class="verdict"><span class="pill ${i.verdict.key}">${esc(tx(i.verdict.label))}</span></div></div>
+    <div class="tldr">${esc(tx(i.tldr))}</div>
     <ul class="changes ${view.showOrig ? '' : 'compact'}">${i.changes.map(changeLi).join('')}</ul>
   </div>`;
 }
@@ -136,7 +138,7 @@ async function loadImpact(el, p, alive) {
   const afterEnd = Math.min(t + 7 * DAY, now);
   const setAll = (fn) => el.querySelectorAll('[data-hero]').forEach((c) => (c.querySelector('[data-wr]').innerHTML = fn(+c.dataset.hero)));
   if (afterEnd - t < DAY / 2) {
-    setAll(() => 'винрейт: данные копятся');
+    setAll(() => L('винрейт: данные копятся', 'win rate: collecting data'));
     return;
   }
   try {
@@ -146,14 +148,14 @@ async function loadImpact(el, p, alive) {
     const a = new Map(after.map((r) => [r.hero_id, r]));
     setAll((id) => {
       const rb = b.get(id), ra = a.get(id);
-      if (!ra || ra.matches < 200) return 'винрейт: мало матчей';
+      if (!ra || ra.matches < 200) return L('винрейт: мало матчей', 'win rate: too few matches');
       const wa = ra.wins / ra.matches;
-      if (!rb || rb.matches < 200) return `винрейт после: <b>${pct(wa)}</b>`;
+      if (!rb || rb.matches < 200) return `${L('винрейт после', 'win rate after')}: <b>${pct(wa)}</b>`;
       const wb = rb.wins / rb.matches;
       const d = (wa - wb) * 100;
-      return `винрейт ${pct(wb)} → <b>${pct(wa)}</b> <span class="delta ${d > 0.05 ? 'up' : d < -0.05 ? 'down' : 'flat'}">${d > 0 ? '+' : ''}${d.toFixed(1)}</span>`;
+      return `${L('винрейт', 'win rate')} ${pct(wb)} → <b>${pct(wa)}</b> <span class="delta ${d > 0.05 ? 'up' : d < -0.05 ? 'down' : 'flat'}">${d > 0 ? '+' : ''}${d.toFixed(1)}</span>`;
     });
   } catch {
-    setAll(() => 'винрейт: API недоступно');
+    setAll(() => L('винрейт: API недоступно', 'win rate: API unavailable'));
   }
 }

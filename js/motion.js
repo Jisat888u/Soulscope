@@ -38,7 +38,12 @@ function initTabInk() {
 /* ---------- плавная смена темы ---------- */
 export function themeTransition(apply) {
   if (reduced()) return apply();
-  if (document.startViewTransition) return document.startViewTransition(apply);
+  if (document.startViewTransition) {
+    // при быстрых повторных кликах браузер пропускает незавершённый переход — это не ошибка
+    const t = document.startViewTransition(apply);
+    [t.ready, t.finished, t.updateCallbackDone].forEach((p) => p.catch(() => {}));
+    return t;
+  }
   const root = document.documentElement;
   root.classList.add('theme-anim');
   apply();
@@ -132,8 +137,9 @@ function initTilt() {
 function initToTop() {
   const btn = document.createElement('button');
   btn.className = 'to-top';
-  btn.title = 'Наверх';
-  btn.setAttribute('aria-label', 'Наверх');
+  btn.title = document.documentElement.lang === 'en' ? 'Back to top' : 'Наверх';
+  btn.setAttribute('aria-label', btn.title);
+  btn.dataset.tTitle = 'toTop'; // перевод при смене языка — в app.js
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 15l6-6 6 6"/></svg>';
   btn.addEventListener('click', () => scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' }));
   document.body.appendChild(btn);

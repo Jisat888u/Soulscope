@@ -1,11 +1,11 @@
 // Ранги: распределение игроков по рангам и подрангам, «где вы» относительно остальных.
 import { api } from '../api.js';
-import { A, state, loading, errorBox, esc, fmtNum, plural, segmented, rankOf, rName, badgeName, badgeImg, ROMAN_SUB, nowRounded } from '../core.js';
+import { A, state, L, locale, loading, errorBox, esc, fmtNum, plural, segmented, rankOf, rName, badgeName, badgeImg, ROMAN_SUB, nowRounded } from '../core.js';
 
 const PERIODS = [
-  { v: 'season', label: 'Весь сезон' },
-  { v: '30', label: '30 дней' },
-  { v: '7', label: '7 дней' },
+  { v: 'season', get label() { return L('Весь сезон', 'Whole season'); } },
+  { v: '30', get label() { return L('30 дней', '30 days'); } },
+  { v: '7', get label() { return L('7 дней', '7 days'); } },
 ];
 const view = { period: 'season', myBadge: readMyBadge() };
 
@@ -17,7 +17,7 @@ function saveMyBadge(b) {
 }
 
 const pctTxt = (x, d = 1) => (x * 100).toFixed(x < 0.01 && x > 0 ? 2 : d) + '%';
-const fmtFull = (n) => n.toLocaleString('ru-RU');
+const fmtFull = (n) => n.toLocaleString(locale());
 
 /** Текущий интервал рейтингового сезона (для подписи и даты окончания). */
 function currentInterval() {
@@ -27,9 +27,9 @@ function currentInterval() {
 }
 
 export async function render(root, { alive }) {
-  const head = () => `<div class="filterbar"><label>Период</label>${segmented(PERIODS, view.period, 'rperiod')}
-    <span class="note">За период считается ранг игрока после его последнего рейтингового матча; игроки на калибровке не учитываются.</span></div>`;
-  root.innerHTML = head() + loading('Считаем игроков по рангам…');
+  const head = () => `<div class="filterbar"><label>${L('Период', 'Period')}</label>${segmented(PERIODS, view.period, 'rperiod')}
+    <span class="note">${L('За период считается ранг игрока после его последнего рейтингового матча; игроки на калибровке не учитываются.', 'A player’s rank after their last ranked match in the period is counted; players still in placement are excluded.')}</span></div>`;
+  root.innerHTML = head() + loading(L('Считаем игроков по рангам…', 'Counting players by rank…'));
   const bindHead = () =>
     root.querySelectorAll('[data-rperiod]').forEach((b) => b.addEventListener('click', () => { view.period = b.dataset.rperiod; render(root, { alive }); }));
   bindHead();
@@ -71,44 +71,45 @@ export async function render(root, { alive }) {
 
   if (!data.some((r) => r.badge === view.myBadge)) view.myBadge = median?.badge || data[0].badge;
 
+  const days = seasonEnd ? Math.max(0, Math.ceil((seasonEnd - Date.now()) / 864e5)) : 0;
   const tile = (k, v, sub = '') => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div>${sub ? `<div class="note">${sub}</div>` : ''}</div>`;
   const badgeChip = (r) => `<span class="row" style="gap:6px;flex-wrap:nowrap"><img src="${esc(badgeImg(r.badge))}" alt="" class="rk-badge" loading="lazy" />${esc(badgeName(r.badge))}</span>`;
 
   root.innerHTML = `
     ${head()}
     <section class="section panel pad">
-      <div class="eyebrow">${ci ? esc(ci.season.name) + (ci.season.intervals.length > 1 ? ` · интервал ${ci.interval.interval}` : '') : 'Рейтинговый режим'}</div>
-      <h2>Распределение рангов</h2>
-      <div class="sub">Сколько игроков сидит на каждом ранге и какой процент сообщества вы обгоняете.</div>
+      <div class="eyebrow">${ci ? esc(L(ci.season.name, ci.season.nameEn || ci.season.name)) + (ci.season.intervals.length > 1 ? ` · ${L('интервал', 'interval')} ${ci.interval.interval}` : '') : L('Рейтинговый режим', 'Ranked mode')}</div>
+      <h2>${L('Распределение рангов', 'Rank distribution')}</h2>
+      <div class="sub">${L('Сколько игроков сидит на каждом ранге и какой процент сообщества вы обгоняете.', 'How many players are at each rank and what share of the community you’re ahead of.')}</div>
       <div class="rk-kpis">
-        ${tile('Игроков с рангом', fmtNum(total), fmtFull(total))}
-        ${tile('Медианный ранг', median ? badgeChip(median) : '—', 'половина игроков ниже')}
-        ${tile('Самый массовый', badgeChip(mode), `${pctTxt(mode.share)} игроков`)}
-        ${tile('Порог топ-1%', badgeChip(top1), 'и выше')}
-        ${tile('Конец сезона', seasonEnd ? seasonEnd.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : '—', seasonEnd ? `через ${Math.max(0, Math.ceil((seasonEnd - Date.now()) / 864e5))} ${plural(Math.max(0, Math.ceil((seasonEnd - Date.now()) / 864e5)), 'день', 'дня', 'дней')}` : '')}
+        ${tile(L('Игроков с рангом', 'Ranked players'), fmtNum(total), fmtFull(total))}
+        ${tile(L('Медианный ранг', 'Median rank'), median ? badgeChip(median) : '—', L('половина игроков ниже', 'half of players are below'))}
+        ${tile(L('Самый массовый', 'Most common'), badgeChip(mode), `${pctTxt(mode.share)} ${L('игроков', 'of players')}`)}
+        ${tile(L('Порог топ-1%', 'Top 1% threshold'), badgeChip(top1), L('и выше', 'and above'))}
+        ${tile(L('Конец сезона', 'Season ends'), seasonEnd ? `<span>${seasonEnd.toLocaleDateString(locale(), { day: 'numeric', month: 'long' })}</span>` : '—', seasonEnd ? L(`через ${days} ${plural(days, 'день', 'дня', 'дней')}`, `in ${days} ${days === 1 ? 'day' : 'days'}`) : '')}
       </div>
     </section>
 
     <section class="section grid-2 rk-top">
       <div class="panel pad">
-        <div class="eyebrow">Калькулятор</div>
-        <h2>Где вы среди игроков?</h2>
+        <div class="eyebrow">${L('Калькулятор', 'Calculator')}</div>
+        <h2>${L('Где вы среди игроков?', 'Where do you stand?')}</h2>
         <div class="rk-tiers" id="rkPickTier">${tiers
           .map((t) => `<button class="rk-pick ${Math.floor(view.myBadge / 10) === t.tier ? 'on' : ''}" data-tier="${t.tier}" title="${esc(rName(t.rank))}"><img src="${esc(t.rank.img)}" alt="" /><span>${esc(rName(t.rank))}</span></button>`)
           .join('')}</div>
-        <div class="row" style="margin-top:12px"><label class="note" style="text-transform:uppercase;letter-spacing:.12em">Деление</label>
+        <div class="row" style="margin-top:12px"><label class="note" style="text-transform:uppercase;letter-spacing:.12em">${L('Деление', 'Division')}</label>
           <div class="seg" id="rkPickSub">${[1, 2, 3, 4, 5, 6].map((s) => `<button data-sub="${s}" class="${view.myBadge % 10 === s ? 'on' : ''}">${ROMAN_SUB[s]}</button>`).join('')}</div></div>
         <div id="rkResult" class="rk-result"></div>
       </div>
       <div class="panel">
-        <div class="sec-head"><div><div class="eyebrow">Ранги</div><h2>Доля игроков по рангам</h2></div></div>
+        <div class="sec-head"><div><div class="eyebrow">${L('Ранги', 'Ranks')}</div><h2>${L('Доля игроков по рангам', 'Share of players by rank')}</h2></div></div>
         <div class="rk-cards">${tiers
           .map(
             (t) => `<div class="rk-card" style="--rk:${esc(t.rank.color)}">
               <img src="${esc(t.rank.img)}" alt="" loading="lazy" />
               <div style="min-width:0"><div class="rk-name">${esc(rName(t.rank))}</div><div class="note">${esc(state.lang === 'en' ? t.rank.ru : t.rank.en)} · ${fmtNum(t.players)}</div>
                 <div class="rk-meter"><i style="width:${(t.share / Math.max(...tiers.map((x) => x.share))) * 100}%"></i></div></div>
-              <div class="rk-val"><b>${pctTxt(t.share)}</b><div class="note">топ ${pctTxt(t.top)}</div></div>
+              <div class="rk-val"><b>${pctTxt(t.share)}</b><div class="note">${L('топ', 'top')} ${pctTxt(t.top)}</div></div>
             </div>`,
           )
           .join('')}</div>
@@ -116,10 +117,10 @@ export async function render(root, { alive }) {
     </section>
 
     <section class="section panel">
-      <div class="sec-head"><div><div class="eyebrow">Подробно</div><h2>Игроки по подрангам</h2>
-        <div class="sub">Каждый столбец — деление ранга (I–VI), высота — доля всех игроков с рангом. <span class="rk-key"><i></i>ваш ранг</span></div></div></div>
+      <div class="sec-head"><div><div class="eyebrow">${L('Подробно', 'Details')}</div><h2>${L('Игроки по подрангам', 'Players by division')}</h2>
+        <div class="sub">${L('Каждый столбец — деление ранга (I–VI), высота — доля всех игроков с рангом.', 'Each bar is a rank division (I–VI); height is the share of all ranked players.')} <span class="rk-key"><i></i>${L('ваш ранг', 'your rank')}</span></div></div></div>
       <div class="rk-chart-wrap"><div class="rk-chart" id="rkChart"></div></div>
-      <details class="rk-details"><summary>Таблица по всем подрангам</summary>
+      <details class="rk-details"><summary>${L('Таблица по всем подрангам', 'Table of all divisions')}</summary>
         <div class="table-wrap"><table class="data" id="rkTable"></table></div></details>
     </section>`;
   bindHead();
@@ -138,7 +139,7 @@ export async function render(root, { alive }) {
           .map(
             (t) => `<div class="rk-group">${t.subs
               .map(
-                (r) => `<div class="rk-col ${r.badge === view.myBadge ? 'me' : ''}" data-badge="${r.badge}" data-tip="<b>${esc(badgeName(r.badge))}</b><br>${pctTxt(r.share, 2)} игроков · ${fmtFull(r.players)}<br>выше ${pctTxt(r.below)} · топ ${pctTxt(r.top)}">
+                (r) => `<div class="rk-col ${r.badge === view.myBadge ? 'me' : ''}" data-badge="${r.badge}" data-tip="<b>${esc(badgeName(r.badge))}</b><br>${pctTxt(r.share, 2)} ${L('игроков', 'of players')} · ${fmtFull(r.players)}<br>${L('выше', 'above')} ${pctTxt(r.below)} · ${L('топ', 'top')} ${pctTxt(r.top)}">
                   ${label(r) ? `<span class="rk-cap" style="bottom:calc(${(r.share / yMax) * 100}% + 4px)">${pctTxt(r.share)}</span>` : ''}
                   <i style="height:${(r.share / yMax) * 100}%"></i></div>`,
               )
@@ -155,11 +156,14 @@ export async function render(root, { alive }) {
     root.querySelector('#rkResult').innerHTML = `
       <img src="${esc(badgeImg(r.badge))}" alt="" class="rk-result-img" />
       <div><div class="note">${esc(badgeName(r.badge))}</div>
-        <div class="rk-hero">топ ${pctTxt(r.top)}</div>
-        <div class="prose">Вы выше <b>${pctTxt(r.below)}</b> игроков. На этом делении ещё ${pctTxt(r.share, 2)} сообщества (${fmtFull(r.players)} чел.).</div></div>`;
+        <div class="rk-hero">${L('топ', 'top')} ${pctTxt(r.top)}</div>
+        <div class="prose">${L(
+          `Вы выше <b>${pctTxt(r.below)}</b> игроков. На этом делении ещё ${pctTxt(r.share, 2)} сообщества (${fmtFull(r.players)} чел.).`,
+          `You’re above <b>${pctTxt(r.below)}</b> of players. This division holds another ${pctTxt(r.share, 2)} of the community (${fmtFull(r.players)} players).`,
+        )}</div></div>`;
   };
 
-  root.querySelector('#rkTable').innerHTML = `<thead><tr><th>Подранг</th><th class="r">Игроки</th><th class="r">Доля</th><th class="r">Выше чем</th><th class="r">Топ</th></tr></thead>
+  root.querySelector('#rkTable').innerHTML = `<thead><tr><th>${L('Подранг', 'Division')}</th><th class="r">${L('Игроки', 'Players')}</th><th class="r">${L('Доля', 'Share')}</th><th class="r">${L('Выше чем', 'Above')}</th><th class="r">${L('Топ', 'Top')}</th></tr></thead>
     <tbody>${[...data]
       .reverse()
       .map((r) => `<tr><td>${badgeChip(r)}</td><td class="r num">${fmtFull(r.players)}</td><td class="r num">${pctTxt(r.share, 2)}</td><td class="r num">${pctTxt(r.below)}</td><td class="r num">${pctTxt(r.top)}</td></tr>`)

@@ -46,7 +46,16 @@ const isInverse = (stat) => {
   return INVERSE_STATS.some((k) => s.includes(k));
 };
 
-/** Разбирает одну строку изменения. Возвращает { ability, text, effect: buff|nerf|neutral, kind }. */
+const LBL = {
+  fix: { ru: 'Исправление', en: 'Fix' },
+  unpenalty: { ru: 'Убран минус', en: 'Downside removed' },
+  removed: { ru: 'Убрано', en: 'Removed' },
+  added: { ru: 'Новое', en: 'New' },
+  rework: { ru: 'Переработка', en: 'Rework' },
+  change: { ru: 'Изменение', en: 'Change' },
+};
+
+/** Разбирает одну строку изменения. Возвращает { ability, text: {ru,en}, label: {ru,en}, effect: buff|nerf|neutral, kind }. */
 export function analyzeChange(rest) {
   let ability = '';
   let change = rest.trim();
@@ -55,9 +64,9 @@ export function analyzeChange(rest) {
     ability = change.slice(0, dash).trim();
     change = change.slice(dash + 3).trim();
   }
-  const out = { ability, orig: change, text: change, effect: 'neutral', kind: 'change' };
+  const out = { ability, orig: change, text: { ru: change, en: change }, effect: 'neutral', kind: 'change' };
 
-  if (/^(fixed|fix|bug ?fix)/i.test(change)) return { ...out, kind: 'fix', label: 'Исправление' };
+  if (/^(fixed|fix|bug ?fix)/i.test(change)) return { ...out, kind: 'fix', label: LBL.fix };
 
   let stat, from, to, verb;
   let m = /^(.*?)\s+(increased|reduced|decreased|lowered|raised|improved)\s+from\s+(.+?)\s+to\s+(.+?)(?:\s*\((.*)\))?\.?$/i.exec(change);
@@ -87,7 +96,7 @@ export function analyzeChange(rest) {
         ...out,
         kind: 'num',
         effect: good ? 'buff' : 'nerf',
-        text: `${translateStat(stat)}: ${from.trim()} → ${to.trim()}`,
+        text: { ru: `${translateStat(stat)}: ${from.trim()} → ${to.trim()}`, en: `${stat.trim()}: ${from.trim()} → ${to.trim()}` },
         up,
       };
     }
@@ -97,35 +106,39 @@ export function analyzeChange(rest) {
   if (m) {
     const up = /increased|raised/i.test(m[2]);
     const good = isInverse(m[1]) ? !up : up;
-    return { ...out, kind: 'num', effect: good ? 'buff' : 'nerf', text: `${translateStat(m[1])}: ${up ? '+' : '−'}${m[3]}` };
+    return { ...out, kind: 'num', effect: good ? 'buff' : 'nerf', text: { ru: `${translateStat(m[1])}: ${up ? '+' : '−'}${m[3]}`, en: `${m[1].trim()}: ${up ? '+' : '−'}${m[3]}` } };
   }
 
   if (/\bno longer\b/i.test(change)) {
     const bad = /\bno longer\b.*\b(penalt|self|interrupt|cancel|require|cost|reduce[sd]? your|lose)/i.test(change);
-    return { ...out, effect: bad ? 'buff' : 'nerf', label: bad ? 'Убран минус' : 'Убрано' };
+    return { ...out, effect: bad ? 'buff' : 'nerf', label: bad ? LBL.unpenalty : LBL.removed };
   }
-  if (/\b(can now|now also|now gains?|now grants?|added|now applies|now deals|now heals|now has)\b/i.test(change)) return { ...out, effect: 'buff', label: 'Новое' };
-  if (/\b(removed)\b/i.test(change)) return { ...out, effect: 'nerf', label: 'Убрано' };
-  if (/\b(rework|reworked|redesigned)\b/i.test(change)) return { ...out, label: 'Переработка' };
-  return { ...out, label: 'Изменение' };
+  if (/\b(can now|now also|now gains?|now grants?|added|now applies|now deals|now heals|now has)\b/i.test(change)) return { ...out, effect: 'buff', label: LBL.added };
+  if (/\b(removed)\b/i.test(change)) return { ...out, effect: 'nerf', label: LBL.removed };
+  if (/\b(rework|reworked|redesigned)\b/i.test(change)) return { ...out, label: LBL.rework };
+  return { ...out, label: LBL.change };
 }
 
 function verdictOf(changes) {
   const b = changes.filter((c) => c.effect === 'buff').length;
   const n = changes.filter((c) => c.effect === 'nerf').length;
-  if (!b && !n) return { key: 'neutral', label: 'Изменения', b, n };
-  if (b && !n) return { key: 'buff', label: 'Бафф', b, n };
-  if (n && !b) return { key: 'nerf', label: 'Нерф', b, n };
-  if (b >= n * 2) return { key: 'buff', label: 'Скорее бафф', b, n };
-  if (n >= b * 2) return { key: 'nerf', label: 'Скорее нерф', b, n };
-  return { key: 'mixed', label: 'Смешанно', b, n };
+  if (!b && !n) return { key: 'neutral', label: { ru: 'Изменения', en: 'Changes' }, b, n };
+  if (b && !n) return { key: 'buff', label: { ru: 'Бафф', en: 'Buff' }, b, n };
+  if (n && !b) return { key: 'nerf', label: { ru: 'Нерф', en: 'Nerf' }, b, n };
+  if (b >= n * 2) return { key: 'buff', label: { ru: 'Скорее бафф', en: 'Mostly buff' }, b, n };
+  if (n >= b * 2) return { key: 'nerf', label: { ru: 'Скорее нерф', en: 'Mostly nerf' }, b, n };
+  return { key: 'mixed', label: { ru: 'Смешанно', en: 'Mixed' }, b, n };
 }
 
-/** Краткий человеческий вывод по герою/предмету. */
+/** Краткий человеческий вывод по герою/предмету — сразу на двух языках. */
 function tldr(changes, verdict) {
+  return { ru: tldrIn(changes, verdict, 'ru'), en: tldrIn(changes, verdict, 'en') };
+}
+function tldrIn(changes, verdict, lang) {
+  const en = lang === 'en';
   const byAb = new Map();
   for (const c of changes) {
-    const k = c.ability || 'Базовые параметры';
+    const k = c.ability || (en ? 'Base stats' : 'Базовые параметры');
     const v = byAb.get(k) || { b: 0, n: 0, total: 0 };
     v.total++;
     if (c.effect === 'buff') v.b++;
@@ -138,11 +151,13 @@ function tldr(changes, verdict) {
     else if (v.n > v.b) down.push(k);
   }
   const parts = [];
-  if (up.length) parts.push(`усилено: ${up.slice(0, 4).join(', ')}`);
-  if (down.length) parts.push(`ослаблено: ${down.slice(0, 4).join(', ')}`);
+  if (up.length) parts.push(`${en ? 'buffed' : 'усилено'}: ${up.slice(0, 4).join(', ')}`);
+  if (down.length) parts.push(`${en ? 'nerfed' : 'ослаблено'}: ${down.slice(0, 4).join(', ')}`);
   const fixes = changes.filter((c) => c.kind === 'fix').length;
-  if (!parts.length) parts.push(fixes ? 'исправления багов без влияния на силу' : 'механические изменения');
-  const end = { buff: 'Итог: стал сильнее.', nerf: 'Итог: стал слабее.', mixed: 'Итог: сила примерно на прежнем уровне, смещены акценты.', neutral: '' }[verdict.key];
+  if (!parts.length) parts.push(fixes ? (en ? 'bug fixes with no impact on strength' : 'исправления багов без влияния на силу') : en ? 'mechanical changes' : 'механические изменения');
+  const end = (en
+    ? { buff: 'Verdict: stronger.', nerf: 'Verdict: weaker.', mixed: 'Verdict: about as strong as before, with shifted priorities.', neutral: '' }
+    : { buff: 'Итог: стал сильнее.', nerf: 'Итог: стал слабее.', mixed: 'Итог: сила примерно на прежнем уровне, смещены акценты.', neutral: '' })[verdict.key];
   const s = parts.join('; ');
   return s.charAt(0).toUpperCase() + s.slice(1) + '. ' + end;
 }

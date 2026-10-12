@@ -55,7 +55,7 @@ export async function api(path, params = {}, ttlMin = 30) {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const res = await fetch(url);
-        if (res.status === 429) throw new Error('Слишком много запросов к API (429), попробуйте через минуту');
+        if (res.status === 429) throw new Error(document.documentElement.lang === 'en' ? 'Too many API requests (429), try again in a minute' : 'Слишком много запросов к API (429), попробуйте через минуту');
         if (!res.ok) throw new Error(`API ${res.status}`);
         const text = await res.text();
         const data = JSON.parse(text);

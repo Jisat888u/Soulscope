@@ -1,5 +1,5 @@
 // Точка входа: шапка, роутинг по hash, поиск (Ctrl+K), тема, язык.
-import { A, state, setState, onState, loadAssets, getMeta, patchInfo, hName, heroImg, esc, pct, fmtNum, timeAgo, initTooltips, roleName, periodLabel } from './core.js';
+import { A, state, setState, onState, loadAssets, getMeta, patchInfo, hName, heroImg, esc, pct, fmtNum, timeAgo, initTooltips, roleName, periodLabel, L, locale } from './core.js';
 import { loadPatches, latestBalancePatch } from './patches.js';
 import { initMotion, leaveView, moveTabInk, themeTransition } from './motion.js';
 
@@ -64,22 +64,80 @@ async function render() {
   } catch (e) {
     console.error(e);
     app.classList.remove('view-leave');
-    if (token === renderToken) app.innerHTML = `<div class="error"><b>Ошибка отрисовки.</b> ${esc(e.message)}</div>`;
+    if (token === renderToken) app.innerHTML = `<div class="error"><b>${L('Ошибка отрисовки.', 'Render error.')}</b> ${esc(e.message)}</div>`;
   }
 }
 
-/* ---------- шапка ---------- */
-function applyTheme() {
-  document.documentElement.dataset.theme = state.theme;
-  try { localStorage.setItem('dt.theme', state.theme); } catch {}
+/* ---------- язык интерфейса: статичные части страницы ---------- */
+const UI = {
+  'nav.home': ['Главная', 'Home'],
+  'nav.tier': ['Тир-лист', 'Tier list'],
+  'nav.heroes': ['Герои и билды', 'Heroes & builds'],
+  'nav.counters': ['Контр-предметы', 'Counter items'],
+  'nav.patches': ['Патч-трекер', 'Patch tracker'],
+  'nav.duos': ['Связки на линии', 'Lane duos'],
+  'nav.ranks': ['Ранги', 'Ranks'],
+  search: ['Поиск героя…', 'Search hero…'],
+  searchTitle: ['Поиск героя', 'Search hero'],
+  langTitle: ['Язык сайта: русский → English', 'Site language: English → русский'],
+  tickerLoading: ['Загружаем статистику…', 'Loading stats…'],
+  footAbout: ['— фанатская аналитика Deadlock. Не связан с Valve.', '— fan-made Deadlock analytics. Not affiliated with Valve.'],
+  footData: ['Данные:', 'Data:'],
+  footNotes: ['патчноуты', 'patch notes'],
+  toTop: ['Наверх', 'Back to top'],
+};
+function applyLang() {
+  const en = state.lang === 'en';
+  document.documentElement.lang = en ? 'en' : 'ru';
+  document.title = L('SoulScope — статистика Deadlock', 'SoulScope — Deadlock stats');
+  document.querySelector('meta[name="description"]')?.setAttribute(
+    'content',
+    L('SoulScope — статистика Deadlock: тир-лист героев, актуальные билды, контр-предметы, патч-трекер, ранги и лучшие связки на линии по винрейту.',
+      'SoulScope — Deadlock stats: hero tier list, current builds, counter items, patch tracker, ranks and the best lane duos by win rate.'),
+  );
+  document.querySelectorAll('[data-t]').forEach((el) => { const t = UI[el.dataset.t]; if (t) el.textContent = L(...t); });
+  document.querySelectorAll('[data-t-title]').forEach((el) => {
+    const t = UI[el.dataset.tTitle];
+    if (!t) return;
+    el.title = L(...t);
+    if (el.hasAttribute('aria-label')) el.setAttribute('aria-label', el.title);
+  });
+  document.getElementById('langBtn').textContent = en ? 'EN' : 'RU';
+  if (A.updated) document.getElementById('assetsInfo').textContent = `${L('ассеты от', 'assets from')} ${new Date(A.updated).toLocaleDateString(locale())}`;
+  renderBanner();
+  syncThemeBtn();
 }
+
+/* ---------- темы: тёмная → кремовая → «души» ---------- */
+const THEMES = [
+  { v: 'dark', name: ['Тёмная', 'Dark'], icon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>' },
+  { v: 'light', name: ['Кремовая', 'Cream'], icon: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>' },
+  { v: 'souls', name: ['Души', 'Souls'], icon: '<circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="8.5" stroke-dasharray="2.2 3.2"/><circle cx="10.6" cy="10.6" r="1.2" fill="currentColor" stroke="none"/>' },
+];
+const themeOf = (v) => THEMES.find((t) => t.v === v) || THEMES[0];
+function syncThemeBtn() {
+  const btn = document.getElementById('themeBtn');
+  const cur = themeOf(state.theme);
+  const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${cur.icon}</svg>`;
+  btn.title = `${L('Тема', 'Theme')}: ${L(...cur.name)} → ${L(...next.name)}`;
+  btn.setAttribute('aria-label', btn.title);
+}
+function applyTheme() {
+  document.documentElement.dataset.theme = themeOf(state.theme).v;
+  try { localStorage.setItem('dt.theme', themeOf(state.theme).v); } catch {}
+  syncThemeBtn();
+}
+
+/* ---------- шапка ---------- */
 function initHeader() {
-  const langBtn = document.getElementById('langBtn');
-  const sync = () => (langBtn.textContent = state.lang === 'en' ? 'EN' : 'RU');
-  sync();
-  langBtn.addEventListener('click', () => { setState({ lang: state.lang === 'en' ? 'ru' : 'en' }); sync(); });
+  document.getElementById('langBtn').addEventListener('click', () => setState({ lang: state.lang === 'en' ? 'ru' : 'en' }));
   document.getElementById('themeBtn').addEventListener('click', () =>
-    themeTransition(() => { setState({ theme: state.theme === 'light' ? 'dark' : 'light' }); applyTheme(); }),
+    themeTransition(() => {
+      const i = THEMES.indexOf(themeOf(state.theme));
+      setState({ theme: THEMES[(i + 1) % THEMES.length].v });
+      applyTheme();
+    }),
   );
   document.getElementById('searchBtn').addEventListener('click', openSearch);
   document.addEventListener('keydown', (e) => {
@@ -94,7 +152,7 @@ async function updateTicker() {
   try {
     const meta = await getMeta();
     const top = [...meta.list].sort((a, b) => b.wr - a.wr).slice(0, 14);
-    const items = `<span class="tk"><b>${fmtNum(meta.totalMatches)}</b>&nbsp;матчей · ${esc(periodLabel())}</span>
+    const items = `<span class="tk"><b>${fmtNum(meta.totalMatches)}</b>&nbsp;${L('матчей', 'matches')} · ${esc(periodLabel())}</span>
       ${top.map((x) => `<a class="tk" href="#/hero/${x.id}">${heroImg(x.hero, 'sm')}${esc(hName(x.hero))} <b class="${x.wr >= 0.5 ? 'good' : 'bad'}">${pct(x.wr)}</b></a>`).join('')}`;
     // контент дублируется, чтобы бегущая строка шла бесшовно (сдвиг на -50%)
     el.innerHTML = `<div class="ticker-inner has-track">
@@ -103,7 +161,7 @@ async function updateTicker() {
     </div>`;
     el.querySelectorAll('.hicon').forEach((i) => (i.style.cssText = 'width:18px;height:18px;border-radius:4px'));
   } catch {
-    el.innerHTML = '<div class="ticker-inner"><span class="live">LIVE</span><span class="tk muted">API статистики временно недоступно</span></div>';
+    el.innerHTML = `<div class="ticker-inner"><span class="live">LIVE</span><span class="tk muted">${L('API статистики временно недоступно', 'Stats API is temporarily unavailable')}</span></div>`;
   }
 }
 
@@ -150,7 +208,7 @@ function openSearch() {
   if (document.querySelector('.modal-back')) return;
   const back = document.createElement('div');
   back.className = 'modal-back';
-  back.innerHTML = `<div class="modal"><input type="text" placeholder="Найти героя (RU или EN)…" autocomplete="off" /><div class="results"></div></div>`;
+  back.innerHTML = `<div class="modal"><input type="text" placeholder="${L('Найти героя (RU или EN)…', 'Find a hero (EN or RU)…')}" autocomplete="off" /><div class="results"></div></div>`;
   document.body.appendChild(back);
   const input = back.querySelector('input');
   const results = back.querySelector('.results');
@@ -165,7 +223,7 @@ function openSearch() {
     sel = Math.min(sel, Math.max(0, list.length - 1));
     results.innerHTML = list.length
       ? list.map((h, i) => `<div class="res ${i === sel ? 'sel' : ''}" data-i="${i}">${heroImg(h, 'sm')}<b>${esc(hName(h))}</b><span class="muted">${esc(state.lang === 'en' ? h.ru : h.en)}</span><span class="r2">${roleName(h.type)}</span></div>`).join('')
-      : '<div class="empty">Ничего не найдено</div>';
+      : `<div class="empty">${L('Ничего не найдено', 'Nothing found')}</div>`;
   };
   const go = (h) => { close(); location.hash = `#/hero/${h.id}`; };
   input.addEventListener('input', () => { sel = 0; draw(); });
@@ -181,19 +239,36 @@ function openSearch() {
   input.focus();
 }
 
+/* ---------- баннер о свежем патче ---------- */
+let bannerPatch = null;
+function renderBanner() {
+  if (!bannerPatch) return;
+  const banner = document.getElementById('banner');
+  banner.innerHTML = L(
+    `Патч <b>${esc(patchInfo.title)}</b> вышел ${esc(timeAgo(bannerPatch.date))} — <a href="#/patches">кто стал сильнее, а кто слабее →</a>`,
+    `Patch <b>${esc(patchInfo.title)}</b> dropped ${esc(timeAgo(bannerPatch.date))} — <a href="#/patches">who got stronger and who got weaker →</a>`,
+  );
+  banner.classList.remove('hidden');
+}
+
 /* ---------- старт ---------- */
 async function start() {
   initHeader();
+  applyLang();
+  applyTheme();
   initTooltips();
   watchLayout();
   watchStagger();
   initMotion(app);
-  app.innerHTML = '<div class="loading"><div class="spinner"></div>Загружаем героев и предметы…</div>';
+  app.innerHTML = `<div class="loading"><div class="spinner"></div>${L('Загружаем героев и предметы…', 'Loading heroes and items…')}</div>`;
   try {
     await loadAssets();
-    document.getElementById('assetsInfo').textContent = `ассеты от ${new Date(A.updated).toLocaleDateString('ru-RU')}`;
+    applyLang();
   } catch (e) {
-    app.innerHTML = `<div class="error"><b>Не найден data/assets.json.</b> Запустите <code>node scripts/update-assets.mjs</code> и откройте сайт через локальный сервер.</div>`;
+    app.innerHTML = L(
+      `<div class="error"><b>Не найден data/assets.json.</b> Запустите <code>node scripts/update-assets.mjs</code> и откройте сайт через локальный сервер.</div>`,
+      `<div class="error"><b>data/assets.json not found.</b> Run <code>node scripts/update-assets.mjs</code> and open the site through a local server.</div>`,
+    );
     return;
   }
 
@@ -205,15 +280,15 @@ async function start() {
       patchInfo.start = Math.floor(p.date.getTime() / 1000);
       patchInfo.title = p.title.replace(/^Minor Update\s*-\s*/i, '');
       patchInfo.date = p.date;
-      const banner = document.getElementById('banner');
-      banner.innerHTML = `Патч <b>${esc(patchInfo.title)}</b> вышел ${esc(timeAgo(p.date))} — <a href="#/patches">кто стал сильнее, а кто слабее →</a>`;
-      banner.classList.remove('hidden');
+      bannerPatch = p;
+      renderBanner();
     })
     .catch(() => {});
 
   if (state.period === 'patch') await patchesReady;
   window.addEventListener('hashchange', render);
   onState((patch) => {
+    if ('lang' in patch) applyLang();
     if ('badge' in patch || 'period' in patch || 'lang' in patch) {
       render();
       updateTicker();

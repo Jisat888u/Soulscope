@@ -23,8 +23,18 @@ export function setState(patch) {
   listeners.forEach((fn) => fn(patch));
 }
 
+/* ---------------- язык интерфейса ---------------- */
+/** Строка на текущем языке: L('Тир-лист', 'Tier list'). */
+export const L = (ru, en) => (state.lang === 'en' ? en : ru);
+export const isEn = () => state.lang === 'en';
+/** Объект { ru, en } → строка на текущем языке. */
+export const tx = (o) => (o == null ? '' : typeof o === 'string' ? o : (state.lang === 'en' ? o.en : o.ru) ?? o.ru ?? o.en ?? '');
+export const locale = () => (state.lang === 'en' ? 'en-US' : 'ru-RU');
+/** Число с подписью: n(5, ['матч','матча','матчей'], ['match','matches']). */
+export const nWord = (n, ru, en) => (state.lang === 'en' ? (n === 1 ? en[0] : en[1]) : plural(n, ...ru));
+
 export const RANKS = [
-  { v: 0, label: 'Все ранги' },
+  { v: 0, get label() { return L('Все ранги', 'All ranks'); } },
   { v: 71, label: 'Emissary+' },
   { v: 81, label: 'Oracle+' },
   { v: 91, label: 'Phantom+' },
@@ -32,10 +42,10 @@ export const RANKS = [
   { v: 111, label: 'Eternus' },
 ];
 export const PERIODS = [
-  { v: 'patch', label: 'Текущий патч' },
-  { v: '7d', label: '7 дней' },
-  { v: '14d', label: '14 дней' },
-  { v: '30d', label: '30 дней' },
+  { v: 'patch', get label() { return L('Текущий патч', 'Current patch'); } },
+  { v: '7d', get label() { return L('7 дней', '7 days'); } },
+  { v: '14d', get label() { return L('14 дней', '14 days'); } },
+  { v: '30d', get label() { return L('30 дней', '30 days'); } },
 ];
 
 /** Начало текущего патча (unix, сек) — выставляется после загрузки патчей. */
@@ -55,11 +65,12 @@ export function timeWindow() {
   return { min, max: now, prevMin: min - len, prevMax: min };
 }
 export function periodLabel() {
-  if (state.period === 'patch' && patchInfo.start) return `с патча ${patchInfo.title || ''}`.trim();
-  return { '7d': 'последние 7 дней', '14d': 'последние 14 дней', '30d': 'последние 30 дней' }[state.period] || 'последние 7 дней';
+  if (state.period === 'patch' && patchInfo.start) return `${L('с патча', 'since patch')} ${patchInfo.title || ''}`.trim();
+  const d = parseInt(state.period, 10) || 7;
+  return L(`последние ${d} дней`, `last ${d} days`);
 }
 export function rankLabel() {
-  return RANKS.find((r) => r.v === state.badge)?.label || 'Все ранги';
+  return RANKS.find((r) => r.v === state.badge)?.label || RANKS[0].label;
 }
 export function statParams(extra = {}) {
   const w = timeWindow();
@@ -138,7 +149,7 @@ export const badgeName = (badge) => `${rName(rankOf(Math.floor(badge / 10)))} ${
 export const badgeImg = (badge) => `https://api.deadlock-api.com/v1/assets/ranks/${Math.floor(badge / 10)}/${badge % 10}/image?format=webp`;
 export const iName = (i) => (state.lang === 'en' ? i.en : i.ru) || i.en;
 export const iDesc = (i) => (state.lang === 'en' ? i.descEn : i.descRu) || i.descEn || '';
-export const itemReason = (i) => ITEM_REASON[i.cls] || SLOT_REASON[i.slot] || '';
+export const itemReason = (i) => tx(ITEM_REASON[i.cls] || SLOT_REASON[i.slot]);
 
 /* ---------------- мета / тир-лист ---------------- */
 export const TIERS = [
@@ -280,12 +291,12 @@ export function plural(n, one, few, many) {
 }
 export function timeAgo(date) {
   const s = (Date.now() - new Date(date).getTime()) / 1000;
-  if (s < 3600) return `${Math.max(1, Math.round(s / 60))} мин назад`;
-  if (s < 86400) { const h = Math.round(s / 3600); return `${h} ${plural(h, 'час', 'часа', 'часов')} назад`; }
+  if (s < 3600) { const m = Math.max(1, Math.round(s / 60)); return L(`${m} мин назад`, `${m} min ago`); }
+  if (s < 86400) { const h = Math.round(s / 3600); return L(`${h} ${plural(h, 'час', 'часа', 'часов')} назад`, `${h} ${h === 1 ? 'hour' : 'hours'} ago`); }
   const d = Math.round(s / 86400);
-  return `${d} ${plural(d, 'день', 'дня', 'дней')} назад`;
+  return L(`${d} ${plural(d, 'день', 'дня', 'дней')} назад`, `${d} ${d === 1 ? 'day' : 'days'} ago`);
 }
-export const fmtDate = (d) => new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+export const fmtDate = (d) => new Date(d).toLocaleDateString(locale(), { day: '2-digit', month: 'short', year: 'numeric' });
 
 /* ---------------- компоненты ---------------- */
 const PLACEHOLDER = 'img/logo.svg';
@@ -295,7 +306,8 @@ export function heroImg(h, cls = '') {
 export function heroLink(h, { cls = '', sub = '' } = {}) {
   return `<a class="hero-link" href="#/hero/${h.id}">${heroImg(h, cls)}<span style="min-width:0"><span class="hname">${esc(hName(h))}</span>${sub ? `<div class="role-tag">${sub}</div>` : ''}</span></a>`;
 }
-export const roleName = (type) => (ROLES[type] || ROLES.unknown).one;
+export const roleName = (type) => { const r = ROLES[type] || ROLES.unknown; return L(r.one, r.oneEn); };
+export const rolesName = (type) => { const r = ROLES[type] || ROLES.unknown; return L(r.ru, r.en); };
 export const tierBadge = (t) => `<span class="tier t-${t.key}">${t.label}</span>`;
 export function ratingBar(r) {
   return `<div class="rating"><div class="bar"><i style="width:${r}%"></i></div><div class="val num">${r}<small>/100</small></div></div>`;
@@ -324,17 +336,17 @@ export function itemCard(item, { sub = '', right = '', reason = '' } = {}) {
 /** Предупреждение о маленькой выборке (узкий ранг + короткий период). */
 export const sampleWarning = (meta) =>
   meta.totalMatches < 5000
-    ? `<div class="error" style="margin-bottom:18px;padding:10px 14px">⚠ Всего ${fmtNum(meta.totalMatches)} матчей в выборке — цифры могут сильно колебаться. Расширьте период или ранг для надёжных выводов.</div>`
+    ? `<div class="error" style="margin-bottom:18px;padding:10px 14px">⚠ ${L(`Всего ${fmtNum(meta.totalMatches)} матчей в выборке — цифры могут сильно колебаться. Расширьте период или ранг для надёжных выводов.`, `Only ${fmtNum(meta.totalMatches)} matches in the sample — numbers may swing a lot. Widen the period or rank for reliable conclusions.`)}</div>`
     : '';
 
 /** Заглушка загрузки: подпись со спиннером и мерцающие «скелетоны» по форме будущего контента. */
-export const loading = (text = 'Загружаем данные…') => `<div class="loading" aria-busy="true">
+export const loading = (text = L('Загружаем данные…', 'Loading data…')) => `<div class="loading" aria-busy="true">
   <div class="loading-label"><div class="spinner"></div>${esc(text)}</div>
   <div class="sk-lines"><i class="skeleton" style="width:38%"></i><i class="skeleton" style="width:72%"></i><i class="skeleton" style="width:56%"></i></div>
   <div class="sk-blocks"><i class="skeleton"></i><i class="skeleton"></i><i class="skeleton"></i></div>
 </div>`;
 export const errorBox = (e) =>
-  `<div class="error"><b>Не удалось загрузить данные.</b><br><span class="muted">${esc(e?.message || e)}</span><br><button class="btn" style="margin-top:10px" onclick="location.reload()">Обновить страницу</button></div>`;
+  `<div class="error"><b>${L('Не удалось загрузить данные.', 'Failed to load data.')}</b><br><span class="muted">${esc(e?.message || e)}</span><br><button class="btn" style="margin-top:10px" onclick="location.reload()">${L('Обновить страницу', 'Reload page')}</button></div>`;
 
 export function segmented(options, value, attr) {
   return `<div class="seg">${options.map((o) => `<button data-${attr}="${o.v}" class="${String(o.v) === String(value) ? 'on' : ''}">${esc(o.label)}</button>`).join('')}</div>`;
@@ -343,8 +355,8 @@ export function segmented(options, value, attr) {
 /** Общая панель фильтров (ранг, период). */
 export function filterBar(extra = '') {
   return `<div class="filterbar" id="filters">
-    <label>Ранг</label>${segmented(RANKS, state.badge, 'badge')}
-    <label>Период</label>${segmented(PERIODS, state.period, 'period')}
+    <label>${L('Ранг', 'Rank')}</label>${segmented(RANKS, state.badge, 'badge')}
+    <label>${L('Период', 'Period')}</label>${segmented(PERIODS, state.period, 'period')}
     ${extra}
   </div>`;
 }
@@ -357,7 +369,7 @@ export function bindFilterBar(root) {
 export function initTooltips() {
   const tip = document.getElementById('tip');
   let current = null;
-  const SLOT_RU = { weapon: 'Оружие', vitality: 'Живучесть', spirit: 'Дух' };
+  const SLOT = { weapon: ['Оружие', 'Weapon'], vitality: ['Живучесть', 'Vitality'], spirit: ['Дух', 'Spirit'] };
   document.addEventListener('mouseover', (e) => {
     const el = e.target.closest('[data-item],[data-tip]');
     if (el === current) return;
@@ -366,7 +378,7 @@ export function initTooltips() {
     if (el.dataset.item) {
       const it = A.itemById.get(+el.dataset.item);
       if (!it) return;
-      tip.innerHTML = `<div class="tt">${esc(iName(it))}</div><div class="tm">${SLOT_RU[it.slot] || ''} · тир ${it.tier} · ${fmtNum(it.cost)} душ${it.active ? ' · активный' : ''}</div><div class="td">${esc(iDesc(it))}</div>`;
+      tip.innerHTML = `<div class="tt">${esc(iName(it))}</div><div class="tm">${SLOT[it.slot] ? L(...SLOT[it.slot]) : ''} · ${L('тир', 'tier')} ${it.tier} · ${fmtNum(it.cost)} ${L('душ', 'souls')}${it.active ? L(' · активный', ' · active') : ''}</div><div class="td">${esc(iDesc(it))}</div>`;
     } else {
       tip.innerHTML = `<div class="td">${el.dataset.tip}</div>`;
     }

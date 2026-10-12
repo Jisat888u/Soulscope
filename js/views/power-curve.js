@@ -1,25 +1,37 @@
 // «Сила по ходу матча»: винрейт героя в зависимости от длительности матча.
 // Короткие матчи выигрывают герои ранней игры, длинные — лейт-герои.
-import { A, getDurationStats, getSoulCurve, DURATION_BUCKETS, esc, fmtNum, errorBox, loading } from '../core.js';
+import { A, L, getDurationStats, getSoulCurve, DURATION_BUCKETS, esc, fmtNum, errorBox, loading } from '../core.js';
 
 const MIN_SAMPLE = 150; // меньше матчей в интервале — точка считается ненадёжной
 
 const TYPES = {
   early: {
-    label: 'Сильнее в начале',
-    advice: 'Давите с линии, забирайте объекты и старайтесь закончить матч до 30-й минуты: чем дольше игра, тем слабее герой.',
+    label: ['Сильнее в начале', 'Early-game hero'],
+    advice: [
+      'Давите с линии, забирайте объекты и старайтесь закончить матч до 30-й минуты: чем дольше игра, тем слабее герой.',
+      'Pressure your lane, take objectives and try to end before minute 30: the longer the game, the weaker the hero.',
+    ],
   },
   late: {
-    label: 'Лейт-герой',
-    advice: 'Переживите раннюю игру, спокойно фармите и не форсируйте драки: со временем герой становится только сильнее.',
+    label: ['Лейт-герой', 'Late-game hero'],
+    advice: [
+      'Переживите раннюю игру, спокойно фармите и не форсируйте драки: со временем герой становится только сильнее.',
+      'Survive the early game, farm calmly and don’t force fights: the hero only gets stronger over time.',
+    ],
   },
   mid: {
-    label: 'Пик в мидгейме',
-    advice: 'Окно силы — середина матча: собирайте ключевые предметы к этому времени и навязывайте драки вокруг мид-босса.',
+    label: ['Пик в мидгейме', 'Mid-game peak'],
+    advice: [
+      'Окно силы — середина матча: собирайте ключевые предметы к этому времени и навязывайте драки вокруг мид-босса.',
+      'The power window is mid-game: have your key items by then and force fights around the Mid Boss.',
+    ],
   },
   flat: {
-    label: 'Ровный по ходу матча',
-    advice: 'По сравнению с другими героями длительность матча почти не влияет на его силу — его можно брать под любой темп игры.',
+    label: ['Ровный по ходу матча', 'Consistent all match'],
+    advice: [
+      'По сравнению с другими героями длительность матча почти не влияет на его силу — его можно брать под любой темп игры.',
+      'Compared to other heroes, match length barely affects its strength — it fits any game tempo.',
+    ],
   },
 };
 
@@ -85,7 +97,7 @@ function classify(points) {
 }
 
 export async function renderPowerCurve(el, heroId, alive) {
-  el.innerHTML = loading('Считаем винрейт по длительности матча…');
+  el.innerHTML = loading(L('Считаем винрейт по длительности матча…', 'Calculating win rate by match length…'));
   let buckets, curve;
   try {
     // кривая душ не обязательна: без неё график всё равно покажем
@@ -106,7 +118,7 @@ export async function renderPowerCurve(el, heroId, alive) {
   });
   const shown = points.filter((p) => p.n > 0);
   if (shown.length < 2) {
-    el.innerHTML = '<div class="empty">Недостаточно матчей за выбранный период — попробуйте расширить период или ранг.</div>';
+    el.innerHTML = `<div class="empty">${L('Недостаточно матчей за выбранный период — попробуйте расширить период или ранг.', 'Not enough matches for the selected period — try widening the period or rank.')}</div>`;
     return;
   }
 
@@ -118,15 +130,21 @@ export async function renderPowerCurve(el, heroId, alive) {
   const pp = (x) => `${x > 0 ? '+' : ''}${(x * 100).toFixed(1)}`;
   el.innerHTML = `
     <div class="pc-head">
-      ${t ? `<span class="pc-type pc-${v.type}">${t.label}</span>` : ''}
+      ${t ? `<span class="pc-type pc-${v.type}">${L(...t.label)}</span>` : ''}
       <div class="pc-text">${
         v
-          ? `${v.early != null && v.late != null ? `В матчах до 30 минут — <b>${(v.early * 100).toFixed(1)}%</b> (${pp(v.earlyRel)} п.п. к типичному герою), после 35 минут — <b>${(v.late * 100).toFixed(1)}%</b> (${pp(v.lateRel)} п.п.). ` : ''}${v.type === 'mid' ? `Пик — в матчах <b>${v.best.label} мин</b>. ` : ''}${peakSouls ? `К пику силы (<b>${esc(peak.label)} мин</b>) старайтесь иметь <b>~${fmtNum(peakSouls.target)} душ</b> — в среднем у игроков на герое ${fmtNum(peakSouls.avg)}. ` : ''}${t.advice}`
-          : 'Пока мало матчей, чтобы уверенно сказать, когда герой сильнее.'
+          ? L(
+              `${v.early != null && v.late != null ? `В матчах до 30 минут — <b>${(v.early * 100).toFixed(1)}%</b> (${pp(v.earlyRel)} п.п. к типичному герою), после 35 минут — <b>${(v.late * 100).toFixed(1)}%</b> (${pp(v.lateRel)} п.п.). ` : ''}${v.type === 'mid' ? `Пик — в матчах <b>${v.best.label} мин</b>. ` : ''}${peakSouls ? `К пику силы (<b>${esc(peak.label)} мин</b>) старайтесь иметь <b>~${fmtNum(peakSouls.target)} душ</b> — в среднем у игроков на герое ${fmtNum(peakSouls.avg)}. ` : ''}`,
+              `${v.early != null && v.late != null ? `In matches under 30 minutes — <b>${(v.early * 100).toFixed(1)}%</b> (${pp(v.earlyRel)} pp vs a typical hero), after 35 minutes — <b>${(v.late * 100).toFixed(1)}%</b> (${pp(v.lateRel)} pp). ` : ''}${v.type === 'mid' ? `The peak is in <b>${v.best.label} min</b> matches. ` : ''}${peakSouls ? `By the power peak (<b>${esc(peak.label)} min</b>) aim for <b>~${fmtNum(peakSouls.target)} souls</b> — the average player on this hero has ${fmtNum(peakSouls.avg)}. ` : ''}`,
+            ) + L(...t.advice)
+          : L('Пока мало матчей, чтобы уверенно сказать, когда герой сильнее.', 'Too few matches yet to say confidently when the hero is strongest.')
       }</div>
     </div>
-    <div class="pc-chart" role="img" aria-label="Винрейт героя по длительности матча"></div>
-    <div class="note" style="padding:0 20px 16px">Точка — винрейт героя во всех матчах такой длительности. Тонкая линия — типичный герой (медиана всех героев): вердикт считается относительно неё. Под осью: «души» — цель к середине интервала (столько душ к этой минуте у лучших ~30% игроков на герое), «матчей» — размер выборки. Полые точки — меньше ${MIN_SAMPLE} матчей, им не стоит доверять.</div>`;
+    <div class="pc-chart" role="img" aria-label="${L('Винрейт героя по длительности матча', 'Hero win rate by match length')}"></div>
+    <div class="note" style="padding:0 20px 16px">${L(
+      `Точка — винрейт героя во всех матчах такой длительности. Тонкая линия — типичный герой (медиана всех героев): вердикт считается относительно неё. Под осью: «души» — цель к середине интервала (столько душ к этой минуте у лучших ~30% игроков на герое), «матчей» — размер выборки. Полые точки — меньше ${MIN_SAMPLE} матчей, им не стоит доверять.`,
+      `Each dot is the hero’s win rate across all matches of that length. The thin line is a typical hero (median of all heroes): the verdict is relative to it. Below the axis: "souls" is the target at the middle of the interval (what the top ~30% of players on this hero have by that minute), "matches" is the sample size. Hollow dots have fewer than ${MIN_SAMPLE} matches and shouldn’t be trusted.`,
+    )}</div>`;
 
   const box = el.querySelector('.pc-chart');
   let lastW = 0;
@@ -179,7 +197,7 @@ function drawChart(box, points, peak) {
         <text class="pc-ytick ${Math.abs(tv - 0.5) < 1e-6 ? 'pc-ytick-50' : ''}" x="${m.l - 8}" y="${y(tv) + 4}" text-anchor="end">${(tv * 100).toFixed(step < 0.025 ? 0 : step === 0.025 ? 1 : 0)}%</text>`)
       .join('')}
     <path class="pc-typ" d="${typLine}"/>
-    <text class="pc-typlabel" x="${m.l + pw + 6}" y="${y(lastP.typ) + 4}">типичный</text>
+    <text class="pc-typlabel" x="${m.l + pw + 6}" y="${y(lastP.typ) + 4}">${L('типичный', 'typical')}</text>
     <path class="pc-area" d="${area}"/>
     <path class="pc-line" d="${line}" pathLength="1"/>
     ${points
@@ -191,9 +209,10 @@ function drawChart(box, points, peak) {
             : (p === best || p === worst) && best !== worst
               ? `<text class="pc-dlabel" x="${cx}" y="${p === best ? y(p.wr) - 12 : y(p.wr) + 20}" text-anchor="middle">${fmt(p.wr)}</text>`
               : '';
+        const min = L('мин', 'min');
         const tip = p.wr == null
-          ? `<b>${esc(p.label)} мин</b><br>нет матчей`
-          : `<b>${esc(p.label)} мин</b><br>винрейт ${fmt(p.wr)} · ${fmtNum(p.n)} матчей<br>типичный герой: ${fmt(p.typ)} (${p.wr >= p.typ ? '+' : ''}${((p.wr - p.typ) * 100).toFixed(1)} п.п.)${p.souls ? `<br>души к ~${Math.round(p.soulMin)} мин: цель ${fmtNum(p.souls.target)} · в среднем ${fmtNum(p.souls.avg)}` : ''}${p.n < MIN_SAMPLE ? '<br>мало данных' : ''}`;
+          ? `<b>${esc(p.label)} ${min}</b><br>${L('нет матчей', 'no matches')}`
+          : `<b>${esc(p.label)} ${min}</b><br>${L('винрейт', 'win rate')} ${fmt(p.wr)} · ${fmtNum(p.n)} ${L('матчей', 'matches')}<br>${L('типичный герой', 'typical hero')}: ${fmt(p.typ)} (${p.wr >= p.typ ? '+' : ''}${((p.wr - p.typ) * 100).toFixed(1)} ${L('п.п.', 'pp')})${p.souls ? `<br>${L('души к', 'souls by')} ~${Math.round(p.soulMin)} ${min}: ${L('цель', 'target')} ${fmtNum(p.souls.target)} · ${L('в среднем', 'average')} ${fmtNum(p.souls.avg)}` : ''}${p.n < MIN_SAMPLE ? `<br>${L('мало данных', 'too little data')}` : ''}`;
         return `<g class="pc-hit" data-tip="${tip}" style="--i:${p.i}">
           <rect x="${cx - colW / 2}" y="${m.t}" width="${colW}" height="${ph}" fill="transparent"/>
           <line class="pc-cross" x1="${cx}" x2="${cx}" y1="${m.t}" y2="${m.t + ph}"/>
@@ -206,15 +225,15 @@ function drawChart(box, points, peak) {
       })
       .join('')}
     ${peakCallout()}
-    ${hasSouls ? `<text class="pc-rowlabel" x="${m.l - 8}" y="${m.t + ph + 38}" text-anchor="end">души</text>` : ''}
-    <text class="pc-rowlabel" x="${m.l - 8}" y="${m.t + ph + (hasSouls ? 56 : 36)}" text-anchor="end">матчей</text>
-    <text class="pc-rowlabel" x="${m.l - 8}" y="${m.t + ph + 20}" text-anchor="end">мин</text>
+    ${hasSouls ? `<text class="pc-rowlabel" x="${m.l - 8}" y="${m.t + ph + 38}" text-anchor="end">${L('души', 'souls')}</text>` : ''}
+    <text class="pc-rowlabel" x="${m.l - 8}" y="${m.t + ph + (hasSouls ? 56 : 36)}" text-anchor="end">${L('матчей', 'matches')}</text>
+    <text class="pc-rowlabel" x="${m.l - 8}" y="${m.t + ph + 20}" text-anchor="end">${L('мин', 'min')}</text>
   </svg>`;
 
   /** Плашка «Пик силы · ~26K душ» над точкой пика. */
   function peakCallout() {
     if (!peak || peak.wr == null) return '';
-    const txt = peak.souls ? `Пик силы · ~${fmtNum(peak.souls.target)} душ` : 'Пик силы';
+    const txt = peak.souls ? `${L('Пик силы', 'Power peak')} · ~${fmtNum(peak.souls.target)} ${L('душ', 'souls')}` : L('Пик силы', 'Power peak');
     const w = txt.length * 6.7 + 20, h = 22;
     const cx = Math.min(Math.max(x(peak.i), m.l + w / 2), m.l + pw - w / 2);
     const py = y(peak.wr);

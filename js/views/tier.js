@@ -1,20 +1,21 @@
 // Тир-лист: визуальные ряды S+…D и подробная сортируемая таблица.
-import { sampleWarning, getMeta, filterBar, bindFilterBar, loading, errorBox, esc, pct, fmtNum, hName, heroLink, tierBadge, ratingBar, deltaHtml, wrClass, TIERS, periodLabel, rankLabel, roleName } from '../core.js';
+import { L, rolesName, sampleWarning, getMeta, filterBar, bindFilterBar, loading, errorBox, esc, pct, fmtNum, hName, heroLink, tierBadge, ratingBar, deltaHtml, wrClass, TIERS, periodLabel, rankLabel, roleName } from '../core.js';
 import { ROLES, ROLE_ORDER } from '../knowledge.js';
 
 const view = { role: 'all', sort: 'rating', asc: false, q: '' };
 
+// подписи — функции, чтобы переключение языка подхватывалось без перезагрузки
 const COLS = [
-  { key: 'rank', label: '#', get: (x) => x.rank },
-  { key: 'name', label: 'Герой', get: (x) => hName(x.hero) },
-  { key: 'rating', label: 'Тир / рейтинг', get: (x) => x.rating },
-  { key: 'wr', label: 'Винрейт', get: (x) => x.wr, r: true },
-  { key: 'dwr', label: 'Δ WR', get: (x) => x.dwr ?? -1, r: true, tip: 'Изменение винрейта относительно предыдущего периода такой же длины' },
-  { key: 'pick', label: 'Пикрейт', get: (x) => x.pick, r: true },
-  { key: 'matches', label: 'Матчи', get: (x) => x.matches, r: true },
-  { key: 'kda', label: 'KDA', get: (x) => x.kda, r: true },
-  { key: 'dmg', label: 'Урон / матч', get: (x) => x.dmg, r: true },
-  { key: 'nw', label: 'Души / матч', get: (x) => x.nw, r: true },
+  { key: 'rank', label: () => '#', get: (x) => x.rank },
+  { key: 'name', label: () => L('Герой', 'Hero'), get: (x) => hName(x.hero) },
+  { key: 'rating', label: () => L('Тир / рейтинг', 'Tier / rating'), get: (x) => x.rating },
+  { key: 'wr', label: () => L('Винрейт', 'Win rate'), get: (x) => x.wr, r: true },
+  { key: 'dwr', label: () => 'Δ WR', get: (x) => x.dwr ?? -1, r: true, tip: () => L('Изменение винрейта относительно предыдущего периода такой же длины', 'Win rate change vs the previous period of the same length') },
+  { key: 'pick', label: () => L('Пикрейт', 'Pick rate'), get: (x) => x.pick, r: true },
+  { key: 'matches', label: () => L('Матчи', 'Matches'), get: (x) => x.matches, r: true },
+  { key: 'kda', label: () => 'KDA', get: (x) => x.kda, r: true },
+  { key: 'dmg', label: () => L('Урон / матч', 'Damage / match'), get: (x) => x.dmg, r: true },
+  { key: 'nw', label: () => L('Души / матч', 'Souls / match'), get: (x) => x.nw, r: true },
 ];
 
 export async function render(root, { alive }) {
@@ -29,7 +30,7 @@ export async function render(root, { alive }) {
   }
   if (!alive()) return;
 
-  const roleChips = `<div class="row">${[['all', 'Все роли', 'var(--accent)'], ...ROLE_ORDER.map((r) => [r, ROLES[r].ru, ROLES[r].color])]
+  const roleChips = `<div class="row">${[['all', L('Все роли', 'All roles'), 'var(--accent)'], ...ROLE_ORDER.map((r) => [r, rolesName(r), ROLES[r].color])]
     .map(([v, l, c]) => `<button class="chip ${view.role === v ? 'on' : ''}" data-role="${v}"><span class="dot" style="background:${c}"></span>${l}</button>`)
     .join('')}</div>`;
 
@@ -38,16 +39,16 @@ export async function render(root, { alive }) {
     ${sampleWarning(meta)}
     <section class="section panel">
       <div class="sec-head">
-        <div><div class="eyebrow">Мета · ${esc(periodLabel())} · ${esc(rankLabel())}</div><h2>Тир-лист героев</h2>
-          <div class="sub">${fmtNum(meta.totalMatches)} матчей. Тир = рейтинг 0–100: 80% — винрейт со сглаживанием по объёму выборки, 20% — популярность.</div></div>
+        <div><div class="eyebrow">${L('Мета', 'Meta')} · ${esc(periodLabel())} · ${esc(rankLabel())}</div><h2>${L('Тир-лист героев', 'Hero tier list')}</h2>
+          <div class="sub">${fmtNum(meta.totalMatches)} ${L('матчей. Тир = рейтинг 0–100: 80% — винрейт со сглаживанием по объёму выборки, 20% — популярность.', 'matches. Tier = a 0–100 rating: 80% win rate smoothed by sample size, 20% popularity.')}</div></div>
         ${roleChips}
       </div>
       <div class="tier-rows" id="tierRows"></div>
     </section>
     <section class="section panel">
       <div class="sec-head">
-        <div><div class="eyebrow">Подробно</div><h2>Статистика героев</h2></div>
-        <input type="search" id="tierSearch" placeholder="Фильтр по имени…" value="${esc(view.q)}" />
+        <div><div class="eyebrow">${L('Подробно', 'Details')}</div><h2>${L('Статистика героев', 'Hero statistics')}</h2></div>
+        <input type="search" id="tierSearch" placeholder="${L('Фильтр по имени…', 'Filter by name…')}" value="${esc(view.q)}" />
       </div>
       <div class="table-wrap"><table class="data" id="tierTable"></table></div>
     </section>`;
@@ -61,7 +62,7 @@ export async function render(root, { alive }) {
         <div class="tier-heroes">${
           heroes
             .map(
-              (x) => `<a class="tile" href="#/hero/${x.id}" data-tip="<b>${esc(hName(x.hero))}</b> · ${roleName(x.hero.type)}<br>WR ${pct(x.wr)} · пик ${pct(x.pick)} · ${fmtNum(x.matches)} матчей · рейтинг ${x.rating}">
+              (x) => `<a class="tile" href="#/hero/${x.id}" data-tip="<b>${esc(hName(x.hero))}</b> · ${roleName(x.hero.type)}<br>WR ${pct(x.wr)} · ${L('пик', 'pick')} ${pct(x.pick)} · ${fmtNum(x.matches)} ${L('матчей', 'matches')} · ${L('рейтинг', 'rating')} ${x.rating}">
                 <img src="${esc(x.hero.img.sm || x.hero.img.card)}" alt="" loading="lazy" />
                 <span class="n">${esc(hName(x.hero))}</span><span class="w num ${wrClass(x.wr)}">${pct(x.wr)}</span></a>`,
             )
@@ -79,7 +80,7 @@ export async function render(root, { alive }) {
         return view.asc ? d : -d;
       });
     root.querySelector('#tierTable').innerHTML = `
-      <thead><tr>${COLS.map((c) => `<th class="sortable ${c.r ? 'r' : ''} ${view.sort === c.key ? 'sorted' + (view.asc ? ' asc' : '') : ''}" data-sort="${c.key}" ${c.tip ? `data-tip="${esc(c.tip)}"` : ''}>${c.label}</th>`).join('')}</tr></thead>
+      <thead><tr>${COLS.map((c) => `<th class="sortable ${c.r ? 'r' : ''} ${view.sort === c.key ? 'sorted' + (view.asc ? ' asc' : '') : ''}" data-sort="${c.key}" ${c.tip ? `data-tip="${esc(c.tip())}"` : ''}>${c.label()}</th>`).join('')}</tr></thead>
       <tbody>${rows
         .map(
           (x) => `<tr>

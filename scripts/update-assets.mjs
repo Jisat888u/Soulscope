@@ -138,10 +138,11 @@ async function main() {
     });
 
   console.log('fetching ranks & seasons…');
-  const [ranksEn, ranksRu, seasonsRu] = await Promise.all([
+  const [ranksEn, ranksRu, seasonsRu, seasonsEn] = await Promise.all([
     get('/ranks', 'english'),
     get('/ranks', 'russian'),
     get('/ranked-seasons', 'russian').catch(() => []),
+    get('/ranked-seasons', 'english').catch(() => []),
   ]);
   const ruRank = new Map(ranksRu.map((r) => [r.tier, r]));
   const ranks = ranksEn.map((r) => ({
@@ -152,7 +153,11 @@ async function main() {
     img: r.images?.large_webp || r.images?.large || null,
     small: r.images?.small_webp || r.images?.chalk_webp || r.images?.large_webp || null,
   }));
-  const seasons = seasonsRu.map((s) => ({ name: s.name, intervals: s.intervals || [] }));
+  const seasons = (seasonsEn.length ? seasonsEn : seasonsRu).map((s, i) => ({
+    name: seasonsRu[i]?.name || s.name,
+    nameEn: s.name,
+    intervals: s.intervals || [],
+  }));
 
   // Перезаписываем файл только при реальных изменениях — иначе каждый запуск давал бы
   // новый коммит лишь из-за свежей даты снимка.
