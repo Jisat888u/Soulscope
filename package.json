@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "npx --yes serve@14.2.4 -l 5173 .",
-    "update-assets": "node scripts/update-assets.mjs"
+    "update-assets": "node scripts/update-assets.mjs",
+    "deploy": "node scripts/deploy.mjs --assets",
+    "deploy:code": "node scripts/deploy.mjs"
   }
 }
