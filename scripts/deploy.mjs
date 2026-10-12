@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ASSETS = fileURLToPath(new URL('../data/assets.json', import.meta.url));
 const KNOWLEDGE = fileURLToPath(new URL('../js/knowledge.js', import.meta.url));
-const SITE = 'https://jisat888u.github.io/deadlock-tracker/';
+const SITE = 'https://soulscope.pro/';
 
 function run(cmd, args, { quiet = false } = {}) {
   const r = spawnSync(cmd, args, { cwd: ROOT, stdio: quiet ? 'pipe' : 'inherit', encoding: 'utf8' });
