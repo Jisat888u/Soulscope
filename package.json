@@ -1,8 +1,8 @@
 {
-  "name": "dlck-trck",
+  "name": "soulscope",
   "version": "1.0.0",
   "private": true,
-  "description": "Deadlock Tracker — тир-лист, билды, контр-предметы, патч-трекер и связки на линии",
+  "description": "SoulScope — статистика Deadlock: тир-лист, билды, контр-предметы, патч-трекер, ранги и связки на линии",
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",

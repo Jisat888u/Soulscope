@@ -35,4 +35,4 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Не найдено');
   }
-}).listen(PORT, '127.0.0.1', () => console.log(`dlck.trck: http://localhost:${PORT}`));
+}).listen(PORT, '127.0.0.1', () => console.log(`SoulScope: http://localhost:${PORT}`));

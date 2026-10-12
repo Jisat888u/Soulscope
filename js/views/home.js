@@ -45,8 +45,8 @@ export async function render(root, { alive }) {
     <section class="section panel hero-panel">
       <div style="z-index:1">
         <div class="eyebrow">Deadlock · аналитика матчей</div>
-        <h1 style="margin-top:8px">Добро пожаловать в dlck.trck</h1>
-        <p>Deadlock Tracker собирает статистику публичных матчей и превращает её в понятные решения: кого пикать, что собирать против конкретного состава, что поменял последний патч и с кем выходить на линию.</p>
+        <h1 style="margin-top:8px">Добро пожаловать в SoulScope</h1>
+        <p>SoulScope собирает статистику публичных матчей и превращает её в понятные решения: кого пикать, что собирать против конкретного состава, что поменял последний патч и с кем выходить на линию.</p>
         <div class="stat-chips">
           <span>Проанализировано <b>${fmtNum(meta.totalMatches)}</b> матчей · ${esc(periodLabel())} · ${esc(rankLabel())}</span>
           ${best ? `<span>Лучший WR: ${heroImg(best.hero, 'sm')}<b>${esc(hName(best.hero))}</b> <span class="good">${pct(best.wr)}</span></span>` : ''}

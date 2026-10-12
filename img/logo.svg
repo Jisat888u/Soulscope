@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- SoulScope: прицел, в центре — душа -->
   <rect x="4" y="4" width="56" height="56" rx="12" fill="#1a1612" stroke="#e2c48c" stroke-width="2.5"/>
-  <path d="M32 12 L50 32 L32 52 L14 32 Z" fill="none" stroke="#e2c48c" stroke-width="3"/>
-  <path d="M32 21 L41 32 L32 43 L23 32 Z" fill="#c4553c"/>
-  <path d="M32 12 V21 M32 43 V52 M14 32 H23 M41 32 H50" stroke="#e2c48c" stroke-width="2"/>
-  <circle cx="32" cy="32" r="3" fill="#efe5cf"/>
+  <circle cx="32" cy="32" r="17" fill="none" stroke="#e2c48c" stroke-width="3"/>
+  <path d="M32 10v9M32 45v9M10 32h9M45 32h9" stroke="#e2c48c" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="7.5" fill="#c4553c"/>
+  <circle cx="32" cy="32" r="11" fill="none" stroke="#c4553c" stroke-width="1.2" opacity=".55"/>
+  <circle cx="30.2" cy="30.2" r="2.6" fill="#efe5cf"/>
 </svg>
