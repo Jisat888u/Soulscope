@@ -1,7 +1,7 @@
 // Снимает компактный снапшот ассетов (герои, способности, предметы) из Deadlock API
 // в data/assets.json. Запуск: node scripts/update-assets.mjs
 // Сайт берёт имена/иконки отсюда, а героев, которых нет в снапшоте, догружает из API на лету.
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const API = 'https://api.deadlock-api.com/v1/assets';
@@ -154,8 +154,20 @@ async function main() {
   }));
   const seasons = seasonsRu.map((s) => ({ name: s.name, intervals: s.intervals || [] }));
 
-  const out = { updated: new Date().toISOString(), heroes, items, ranks, seasons };
-  await writeFile(OUT, JSON.stringify(out));
+  // Перезаписываем файл только при реальных изменениях — иначе каждый запуск давал бы
+  // новый коммит лишь из-за свежей даты снимка.
+  const body = { heroes, items, ranks, seasons };
+  try {
+    const prev = JSON.parse(await readFile(OUT, 'utf8'));
+    const { updated: _, ...prevBody } = prev;
+    if (JSON.stringify(prevBody) === JSON.stringify(body)) {
+      console.log(`без изменений: ${heroes.length} heroes, ${items.length} items`);
+      return;
+    }
+  } catch {
+    /* файла ещё нет — пишем с нуля */
+  }
+  await writeFile(OUT, JSON.stringify({ updated: new Date().toISOString(), ...body }));
   console.log(`ok: ${heroes.length} heroes, ${items.length} items -> ${OUT}`);
 }
 

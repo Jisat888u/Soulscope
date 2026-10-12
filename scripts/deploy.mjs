@@ -12,7 +12,7 @@ const KNOWLEDGE = fileURLToPath(new URL('../js/knowledge.js', import.meta.url));
 const SITE = 'https://jisat888u.github.io/deadlock-tracker/';
 
 function run(cmd, args, { quiet = false } = {}) {
-  const r = spawnSync(cmd, args, { cwd: ROOT, stdio: quiet ? 'pipe' : 'inherit', encoding: 'utf8', shell: process.platform === 'win32' });
+  const r = spawnSync(cmd, args, { cwd: ROOT, stdio: quiet ? 'pipe' : 'inherit', encoding: 'utf8' });
   return { ok: r.status === 0, out: (r.stdout || '').trim() };
 }
 const heroIds = () => {
@@ -42,9 +42,7 @@ run('git', ['add', '-A']);
 const staged = !run('git', ['diff', '--cached', '--quiet'], { quiet: true }).ok;
 if (staged) {
   const date = new Date().toLocaleDateString('ru-RU');
-  const msg = `Обновление сайта ${date}`;
-  // на Windows аргументы идут через shell — сообщение с пробелами нужно взять в кавычки
-  if (!run('git', ['commit', '-q', '-m', process.platform === 'win32' ? `"${msg}"` : msg]).ok) {
+  if (!run('git', ['commit', '-q', '-m', `Обновление сайта ${date}`]).ok) {
     console.error('✖ Не удалось создать коммит.');
     process.exit(1);
   }
