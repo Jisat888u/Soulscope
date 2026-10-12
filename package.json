@@ -5,7 +5,7 @@
   "description": "Deadlock Tracker — тир-лист, билды, контр-предметы, патч-трекер и связки на линии",
   "type": "module",
   "scripts": {
-    "start": "npx --yes serve@14.2.4 -l 5173 .",
+    "start": "node scripts/serve.mjs",
     "update-assets": "node scripts/update-assets.mjs",
     "deploy": "node scripts/deploy.mjs --assets",
     "deploy:code": "node scripts/deploy.mjs"

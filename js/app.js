@@ -1,6 +1,7 @@
 // Точка входа: шапка, роутинг по hash, поиск (Ctrl+K), тема, язык.
 import { A, state, setState, onState, loadAssets, getMeta, patchInfo, hName, heroImg, esc, pct, fmtNum, timeAgo, initTooltips, roleName, periodLabel } from './core.js';
 import { loadPatches, latestBalancePatch } from './patches.js';
+import { initMotion, leaveView, moveTabInk, themeTransition } from './motion.js';
 
 const ROUTES = {
   home: () => import('./views/home.js'),
@@ -40,20 +41,29 @@ function track() {
   if (!send()) document.querySelector('script[data-goatcounter]')?.addEventListener('load', send, { once: true });
 }
 
+let lastRouteKey = null;
 async function render() {
   const token = ++renderToken;
   const route = parseHash();
+  // смена раздела (а не фильтров) — с плавным переходом и прокруткой наверх
+  const key = `${route.name}/${route.args.join('/')}`;
+  const routeChanged = lastRouteKey !== null && key !== lastRouteKey;
+  lastRouteKey = key;
   track();
   document.querySelectorAll('#tabs a').forEach((a) => {
     const r = a.dataset.route;
     a.classList.toggle('active', r === route.name || (r === 'heroes' && route.name === 'hero'));
   });
+  moveTabInk();
   try {
-    const mod = await ROUTES[route.name]();
+    const [mod] = await Promise.all([ROUTES[route.name](), routeChanged ? leaveView(app) : null]);
     if (token !== renderToken) return;
+    if (routeChanged) window.scrollTo(0, 0);
+    app.classList.remove('view-leave');
     await mod.render(app, { ...route, alive: () => token === renderToken });
   } catch (e) {
     console.error(e);
+    app.classList.remove('view-leave');
     if (token === renderToken) app.innerHTML = `<div class="error"><b>Ошибка отрисовки.</b> ${esc(e.message)}</div>`;
   }
 }
@@ -68,7 +78,9 @@ function initHeader() {
   const sync = () => (langBtn.textContent = state.lang === 'en' ? 'EN' : 'RU');
   sync();
   langBtn.addEventListener('click', () => { setState({ lang: state.lang === 'en' ? 'ru' : 'en' }); sync(); });
-  document.getElementById('themeBtn').addEventListener('click', () => { setState({ theme: state.theme === 'light' ? 'dark' : 'light' }); applyTheme(); });
+  document.getElementById('themeBtn').addEventListener('click', () =>
+    themeTransition(() => { setState({ theme: state.theme === 'light' ? 'dark' : 'light' }); applyTheme(); }),
+  );
   document.getElementById('searchBtn').addEventListener('click', openSearch);
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); }
@@ -103,6 +115,7 @@ function watchLayout() {
   const measure = () => {
     document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
     nav.classList.toggle('overflowing', nav.scrollWidth > nav.clientWidth + 1);
+    moveTabInk(); // выравнивание навигации могло смениться — подчёркивание пересчитываем
   };
   // замер в следующем кадре — после того как раскладка и шрифты применились
   const sync = () => requestAnimationFrame(measure);
@@ -174,6 +187,7 @@ async function start() {
   initTooltips();
   watchLayout();
   watchStagger();
+  initMotion(app);
   app.innerHTML = '<div class="loading"><div class="spinner"></div>Загружаем героев и предметы…</div>';
   try {
     await loadAssets();
@@ -198,7 +212,7 @@ async function start() {
     .catch(() => {});
 
   if (state.period === 'patch') await patchesReady;
-  window.addEventListener('hashchange', () => { window.scrollTo(0, 0); render(); });
+  window.addEventListener('hashchange', render);
   onState((patch) => {
     if ('badge' in patch || 'period' in patch || 'lang' in patch) {
       render();

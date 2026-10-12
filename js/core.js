@@ -327,7 +327,12 @@ export const sampleWarning = (meta) =>
     ? `<div class="error" style="margin-bottom:18px;padding:10px 14px">⚠ Всего ${fmtNum(meta.totalMatches)} матчей в выборке — цифры могут сильно колебаться. Расширьте период или ранг для надёжных выводов.</div>`
     : '';
 
-export const loading = (text = 'Загружаем данные…') => `<div class="loading"><div class="spinner"></div>${esc(text)}</div>`;
+/** Заглушка загрузки: подпись со спиннером и мерцающие «скелетоны» по форме будущего контента. */
+export const loading = (text = 'Загружаем данные…') => `<div class="loading" aria-busy="true">
+  <div class="loading-label"><div class="spinner"></div>${esc(text)}</div>
+  <div class="sk-lines"><i class="skeleton" style="width:38%"></i><i class="skeleton" style="width:72%"></i><i class="skeleton" style="width:56%"></i></div>
+  <div class="sk-blocks"><i class="skeleton"></i><i class="skeleton"></i><i class="skeleton"></i></div>
+</div>`;
 export const errorBox = (e) =>
   `<div class="error"><b>Не удалось загрузить данные.</b><br><span class="muted">${esc(e?.message || e)}</span><br><button class="btn" style="margin-top:10px" onclick="location.reload()">Обновить страницу</button></div>`;
 
