@@ -221,6 +221,38 @@ export async function getMeta() {
 }
 
 /** Сырые hero-stats за произвольное окно (для патч-трекера). */
+/** Интервалы длительности матча для графика «сила по ходу матча» (минуты). */
+export const DURATION_BUCKETS = [
+  { min: 0, max: 20, label: '<20' },
+  { min: 20, max: 25, label: '20–25' },
+  { min: 25, max: 30, label: '25–30' },
+  { min: 30, max: 35, label: '30–35' },
+  { min: 35, max: 40, label: '35–40' },
+  { min: 40, max: 45, label: '40–45' },
+  { min: 45, max: null, label: '45+' },
+];
+
+const durationCache = new Map();
+/** hero-stats по каждому интервалу длительности (все герои сразу — один набор запросов на фильтр). */
+export function getDurationStats() {
+  const w = timeWindow();
+  const key = `${w.min}|${state.badge}`;
+  if (durationCache.has(key)) return durationCache.get(key);
+  const p = Promise.all(
+    DURATION_BUCKETS.map((b) =>
+      api('/v1/analytics/hero-stats', {
+        min_unix_timestamp: w.min,
+        min_average_badge: state.badge || undefined,
+        min_duration_s: b.min * 60,
+        max_duration_s: b.max == null ? undefined : b.max * 60,
+      }).then((rows) => new Map(rows.map((r) => [r.hero_id, r]))),
+    ),
+  );
+  durationCache.set(key, p);
+  p.catch(() => durationCache.delete(key));
+  return p;
+}
+
 export function heroStatsWindow(min, max) {
   return api('/v1/analytics/hero-stats', { min_unix_timestamp: min, max_unix_timestamp: max, min_average_badge: state.badge || undefined }, 60);
 }

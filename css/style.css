@@ -720,6 +720,38 @@ tr:hover .tier, .mini-row:hover .tier { transform: scale(1.1); }
 @media (max-width: 1100px) { .rk-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .rk-top { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .rk-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rk-hero { font-size: 40px; } .rk-result { flex-direction: column; align-items: flex-start; } }
 
+/* ---------- сила по ходу матча ---------- */
+.pc-head { display: flex; gap: 14px; align-items: flex-start; padding: 0 20px 6px; flex-wrap: wrap; }
+.pc-type {
+  flex-shrink: 0; font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 5px 12px; border-radius: 999px;
+  border: 1px solid var(--chart-1); color: var(--text); background: color-mix(in srgb, var(--chart-1) 14%, transparent);
+  animation: pop .4s ease backwards;
+}
+.pc-text { flex: 1; min-width: 260px; color: var(--text-2); font-size: 13.5px; }
+.pc-text b { color: var(--text); }
+.pc-chart { margin: 6px 20px 4px; overflow: hidden; }
+.pc-chart svg { display: block; overflow: visible; }
+.pc-grid { stroke: var(--line); stroke-width: 1; }
+.pc-grid.pc-50 { stroke: var(--line-2); stroke-width: 1.5; }
+.pc-ytick, .pc-xsub { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.pc-ytick-50 { fill: var(--text-2); font-weight: 700; }
+.pc-xtick { fill: var(--text-2); font-size: 12px; font-weight: 600; }
+.pc-typ { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linejoin: round; opacity: .7; animation: fadeIn .6s ease backwards; animation-delay: .3s; }
+.pc-typlabel { fill: var(--muted); font-size: 11px; }
+.pc-area { fill: var(--chart-1); opacity: .1; animation: fadeIn .8s ease backwards; animation-delay: .5s; }
+.pc-line {
+  fill: none; stroke: var(--chart-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round;
+  stroke-dasharray: 1; stroke-dashoffset: 0; animation: pcDraw 1s cubic-bezier(.3,.7,.2,1) backwards; animation-delay: .1s;
+}
+@keyframes pcDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.pc-dot { fill: var(--chart-1); stroke: var(--panel); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: pop .35s ease backwards; animation-delay: calc(var(--i, 0) * 110ms + .2s); transition: transform .15s; }
+.pc-dot.weak { fill: var(--panel); stroke: var(--chart-1); }
+.pc-dlabel { fill: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; animation: fadeIn .4s ease backwards; animation-delay: 1s; }
+.pc-cross { stroke: var(--line-2); stroke-width: 1; opacity: 0; transition: opacity .15s; }
+.pc-hit { cursor: default; }
+.pc-hit:hover .pc-cross { opacity: 1; }
+.pc-hit:hover .pc-dot { transform: scale(1.35); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .ticker-track { animation: none !important; }

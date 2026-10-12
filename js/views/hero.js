@@ -1,5 +1,6 @@
 // Страница героя: сборка по фазам, ситуативные предметы, прокачка, матчапы, способности.
 import { api } from '../api.js';
+import { renderPowerCurve } from './power-curve.js';
 import { A, state, getMeta, hero, filterBar, bindFilterBar, loading, errorBox, esc, pct, fmtNum, hName, heroLink, tierBadge, deltaHtml, wrClass, itemCard, itemReason, statParams, roleName, periodLabel, rankLabel, ensureHeroes } from '../core.js';
 
 const PHASES = [
@@ -62,6 +63,12 @@ export async function render(root, { args, alive }) {
     </section>
 
     <section class="section panel">
+      <div class="sec-head"><div><div class="eyebrow">Сила по ходу матча · ${esc(periodLabel())} · ${esc(rankLabel())}</div><h2>Когда герой сильнее</h2>
+        <div class="sub">Винрейт в зависимости от длительности матча: герои ранней игры выигрывают короткие матчи, лейт-герои — затяжные.</div></div></div>
+      <div id="powerCurve"></div>
+    </section>
+
+    <section class="section panel">
       <div class="sec-head"><div><div class="eyebrow">Сборка · ${esc(periodLabel())} · ${esc(rankLabel())}</div><h2>Актуальный билд</h2>
         <div class="sub">Самые покупаемые предметы в каждой фазе. Фаза — по среднему времени покупки. Справа: винрейт с предметом и доля матчей, где его купили.</div></div></div>
       <div class="phases" id="phases"></div>
@@ -91,6 +98,7 @@ export async function render(root, { args, alive }) {
   renderBuild(root, items, heroMatches, heroWr);
   renderSkills(root, h, abil);
   renderMatchups(root.querySelector('#matchups'), id, heroMatches, alive);
+  renderPowerCurve(root.querySelector('#powerCurve'), id, alive);
 }
 
 function renderBuild(root, raw, heroMatches, heroWr) {
