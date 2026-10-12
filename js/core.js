@@ -253,6 +253,11 @@ export function getDurationStats() {
   return p;
 }
 
+/** Души героя по минутам матча (среднее и разброс), с учётом фильтров ранга и периода. */
+export function getSoulCurve(heroId) {
+  return api('/v1/analytics/player-performance-curve', statParams({ hero_ids: heroId, resolution: 0 }), 60);
+}
+
 export function heroStatsWindow(min, max) {
   return api('/v1/analytics/hero-stats', { min_unix_timestamp: min, max_unix_timestamp: max, min_average_badge: state.badge || undefined }, 60);
 }
