@@ -11,6 +11,7 @@ const ROUTES = {
   counters: () => import('./views/counters.js'),
   patches: () => import('./views/patches.js'),
   duos: () => import('./views/duos.js'),
+  map: () => import('./views/map.js'),
   ranks: () => import('./views/ranks.js'),
 };
 
@@ -76,6 +77,7 @@ const UI = {
   'nav.counters': ['Контр-предметы', 'Counter items'],
   'nav.patches': ['Патч-трекер', 'Patch tracker'],
   'nav.duos': ['Связки на линии', 'Lane duos'],
+  'nav.map': ['Карта', 'Map'],
   'nav.ranks': ['Ранги', 'Ranks'],
   search: ['Поиск героя…', 'Search hero…'],
   searchTitle: ['Поиск героя', 'Search hero'],
