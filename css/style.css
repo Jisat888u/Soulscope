@@ -207,6 +207,25 @@ nav.tabs a.active { background: var(--panel-2); color: var(--accent); border-col
 .icon-btn:hover { border-color: var(--line-2); color: var(--text); }
 .icon-btn svg { width: 16px; height: 16px; }
 .search-btn { min-width: 0; justify-content: space-between; color: var(--muted); font-weight: 400; }
+/* переключатель тем: у каждой своя иконка и свой цвет — узнаётся в любой теме */
+.theme-switch { display: inline-flex; gap: 2px; height: 34px; padding: 2px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); }
+.theme-opt {
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; border: 1px solid transparent; border-radius: 6px;
+  background: none; cursor: pointer; color: var(--opt); opacity: .5;
+  transition: opacity .2s, background .2s, border-color .2s, transform .15s;
+}
+.theme-opt svg { width: 16px; height: 16px; transition: transform .3s ease; }
+.theme-opt:hover { opacity: .9; }
+.theme-opt:hover svg { transform: rotate(-12deg) scale(1.1); }
+.theme-opt:active { transform: scale(.92); }
+.theme-opt.on { opacity: 1; background: var(--panel-3); border-color: var(--line-2); }
+.theme-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.theme-opt.t-dark { --opt: #c9a66b; }
+.theme-opt.t-light { --opt: #e0962e; }
+.theme-opt.t-souls { --opt: #3cc6c3; }
+:root[data-theme='light'] .theme-opt.t-dark { --opt: #8a6a32; }
+:root[data-theme='light'] .theme-opt.t-light { --opt: #c0731a; }
+:root[data-theme='light'] .theme-opt.t-souls { --opt: #138f8c; }
 .kbd { font-size: 11px; border: 1px solid var(--line-2); border-radius: 4px; padding: 0 5px; color: var(--muted); }
 
 /* ---------- раскладка ---------- */
@@ -602,7 +621,10 @@ footer.site a { color: var(--text-2); text-decoration: underline; text-underline
   nav.tabs a svg { display: none; }
 }
 @media (max-width: 1240px) {
-  nav.tabs a { padding: 8px 7px; }
+  nav.tabs a { padding: 8px 6px; }
+  .header-tools { gap: 6px; }
+  .search-btn .kbd { display: none; }
+  .theme-opt { width: 25px; }
 }
 @media (max-width: 1100px) {
   .role-cols { grid-template-columns: repeat(2, 1fr); }
@@ -613,6 +635,10 @@ footer.site a { color: var(--text-2); text-decoration: underline; text-underline
   .phase:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
   .search-btn { min-width: 0; }
   .search-btn .lbl, .search-btn .kbd { display: none; }
+  /* вкладки не помещаются рядом с логотипом и кнопками — отдельной строкой под ними */
+  .header-inner { flex-wrap: wrap; row-gap: 8px; }
+  .header-tools { margin-left: auto; }
+  nav.tabs { order: 3; flex-basis: 100%; }
 }
 @media (max-width: 860px) {
   .header-inner { flex-wrap: wrap; gap: 10px; padding: 10px 16px; }

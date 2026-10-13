@@ -108,7 +108,7 @@ function applyLang() {
   syncThemeBtn();
 }
 
-/* ---------- темы: тёмная → кремовая → «души» ---------- */
+/* ---------- темы: тёмная, кремовая, «души» — по кнопке на каждую ---------- */
 const THEMES = [
   { v: 'dark', name: ['Тёмная', 'Dark'], icon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>' },
   { v: 'light', name: ['Кремовая', 'Cream'], icon: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>' },
@@ -116,12 +116,14 @@ const THEMES = [
 ];
 const themeOf = (v) => THEMES.find((t) => t.v === v) || THEMES[0];
 function syncThemeBtn() {
-  const btn = document.getElementById('themeBtn');
-  const cur = themeOf(state.theme);
-  const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
-  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${cur.icon}</svg>`;
-  btn.title = `${L('Тема', 'Theme')}: ${L(...cur.name)} → ${L(...next.name)}`;
-  btn.setAttribute('aria-label', btn.title);
+  const box = document.getElementById('themeSwitch');
+  const cur = themeOf(state.theme).v;
+  box.setAttribute('aria-label', L('Тема оформления', 'Color theme'));
+  box.innerHTML = THEMES.map(
+    (t) => `<button class="theme-opt t-${t.v} ${t.v === cur ? 'on' : ''}" data-theme-opt="${t.v}" role="radio" aria-checked="${t.v === cur}"
+      title="${L('Тема', 'Theme')}: ${L(...t.name)}" aria-label="${L('Тема', 'Theme')}: ${L(...t.name)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${t.icon}</svg></button>`,
+  ).join('');
 }
 function applyTheme() {
   document.documentElement.dataset.theme = themeOf(state.theme).v;
@@ -132,13 +134,14 @@ function applyTheme() {
 /* ---------- шапка ---------- */
 function initHeader() {
   document.getElementById('langBtn').addEventListener('click', () => setState({ lang: state.lang === 'en' ? 'ru' : 'en' }));
-  document.getElementById('themeBtn').addEventListener('click', () =>
+  document.getElementById('themeSwitch').addEventListener('click', (e) => {
+    const v = e.target.closest('[data-theme-opt]')?.dataset.themeOpt;
+    if (!v || v === themeOf(state.theme).v) return;
     themeTransition(() => {
-      const i = THEMES.indexOf(themeOf(state.theme));
-      setState({ theme: THEMES[(i + 1) % THEMES.length].v });
+      setState({ theme: v });
       applyTheme();
-    }),
-  );
+    });
+  });
   document.getElementById('searchBtn').addEventListener('click', openSearch);
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); }
