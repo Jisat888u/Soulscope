@@ -94,8 +94,8 @@ function applyLang() {
   document.title = L('SoulScope — статистика Deadlock', 'SoulScope — Deadlock stats');
   document.querySelector('meta[name="description"]')?.setAttribute(
     'content',
-    L('SoulScope — статистика Deadlock: тир-лист героев, актуальные билды, контр-предметы, патч-трекер, ранги и лучшие связки на линии по винрейту.',
-      'SoulScope — Deadlock stats: hero tier list, current builds, counter items, patch tracker, ranks and the best lane duos by win rate.'),
+    L('SoulScope — статистика Deadlock по реальным матчам: тир-лист героев, актуальные билды, контр-предметы, патч-трекер, ранги, связки на линии, карта смертей и фарма.',
+      'SoulScope — Deadlock stats from real matches: hero tier list, current builds, counter items, patch tracker, ranks, lane duos, death and farm maps.'),
   );
   document.querySelectorAll('[data-t]').forEach((el) => { const t = UI[el.dataset.t]; if (t) el.textContent = L(...t); });
   document.querySelectorAll('[data-t-title]').forEach((el) => {
