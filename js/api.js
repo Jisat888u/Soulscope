@@ -34,6 +34,33 @@ function writeStore(key, data, text) {
   }
 }
 
+/* ---------- запасной снимок (data/snapshot.json) ----------
+   robots.txt у api.deadlock-api.com запрещает поисковым роботам любые запросы, поэтому без снимка
+   Google видел главную с ошибкой. Снимок обновляется при публикации (scripts/update-snapshot.mjs)
+   и подходит только для фильтров по умолчанию: все ранги, последние 7 дней. */
+const NARROW = ['min_average_badge', 'hero_id', 'hero_ids', 'enemy_hero_ids', 'account_ids', 'min_duration_s', 'max_duration_s', 'min_game_time_s', 'max_game_time_s'];
+const DAY = 86400;
+function snapshotKey(path, params) {
+  if (NARROW.some((k) => params[k] != null && params[k] !== '')) return null;
+  if (params.min_unix_timestamp) {
+    const span = (params.max_unix_timestamp || Date.now() / 1000) - params.min_unix_timestamp;
+    if (span < 6 * DAY || span > 8 * DAY) return null; // другой период — снимок не подходит
+  }
+  return path + (params.max_unix_timestamp ? '#prev' : '') + (params.same_lane_filter ? '#lane' : '');
+}
+let snapshot = null;
+async function fromSnapshot(path, params) {
+  const key = snapshotKey(path, params);
+  if (!key) return undefined;
+  snapshot ??= fetch('data/snapshot.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const snap = await snapshot;
+  const data = snap?.entries?.[key];
+  if (data === undefined) return undefined;
+  // сообщаем интерфейсу, что цифры из сохранённого снимка (app.js показывает плашку с датой)
+  window.dispatchEvent(new CustomEvent('dt:snapshot', { detail: { updated: snap.updated } }));
+  return data;
+}
+
 /** GET запрос к API. ttlMin — сколько минут ответ считается свежим. */
 export async function api(path, params = {}, ttlMin = 30) {
   const url = buildUrl(path, params);
@@ -64,10 +91,14 @@ export async function api(path, params = {}, ttlMin = 30) {
         return data;
       } catch (e) {
         lastErr = e;
-        await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+        // сетевая ошибка (запрос заблокирован или нет связи) — одна быстрая повторная попытка, дальше снимок
+        if (e instanceof TypeError && attempt >= 1) break;
+        await new Promise((r) => setTimeout(r, (e instanceof TypeError ? 300 : 600) * (attempt + 1)));
       }
     }
     if (s) return s.d; // устаревшие данные лучше, чем ничего
+    const snap = await fromSnapshot(path, params);
+    if (snap !== undefined) return snap;
     throw lastErr;
   })();
   inflight.set(key, p);

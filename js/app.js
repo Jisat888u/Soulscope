@@ -107,6 +107,7 @@ function applyLang() {
   document.getElementById('langBtn').textContent = en ? 'EN' : 'RU';
   if (A.updated) document.getElementById('assetsInfo').textContent = `${L('ассеты от', 'assets from')} ${new Date(A.updated).toLocaleDateString(locale())}`;
   renderBanner();
+  renderSnapshotNote();
   syncThemeBtn();
 }
 
@@ -255,6 +256,23 @@ function renderBanner() {
   );
   banner.classList.remove('hidden');
 }
+
+/* ---------- данные из сохранённого снимка ---------- */
+// API статистики недоступно (у поисковых роботов — всегда) — честно говорим, от какого числа цифры.
+let snapshotDate = null;
+function renderSnapshotNote() {
+  if (!snapshotDate) return;
+  let el = document.getElementById('snapNote');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'snapNote';
+    el.className = 'banner';
+    document.getElementById('banner').after(el);
+  }
+  const d = new Date(snapshotDate).toLocaleDateString(locale(), { day: 'numeric', month: 'long' });
+  el.textContent = L(`Сервер статистики сейчас недоступен — показаны сохранённые данные от ${d}.`, `The stats server is unavailable right now — showing saved data from ${d}.`);
+}
+window.addEventListener('dt:snapshot', (e) => { snapshotDate = e.detail.updated; renderSnapshotNote(); });
 
 /* ---------- старт ---------- */
 async function start() {

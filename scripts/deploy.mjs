@@ -1,5 +1,5 @@
 // Обновление опубликованного сайта одной командой: npm run deploy
-//   1) скачивает свежие ассеты (герои, способности, предметы, ранги) — флаг --assets;
+//   1) скачивает свежие ассеты (герои, способности, предметы, ранги) и снимок статистики — флаг --assets;
 //   2) коммитит все изменения;
 //   3) отправляет на GitHub — GitHub Pages перепубликует сайт за ~1 минуту.
 import { spawnSync } from 'node:child_process';
@@ -28,6 +28,8 @@ if (withAssets) {
     console.error('✖ Не удалось скачать ассеты (API недоступно?). Сайт не изменён.');
     process.exit(1);
   }
+  // снимок статистики для поисковиков; если не удалось — публикуем со старым снимком
+  if (!run('node', ['scripts/update-snapshot.mjs']).ok) console.log('⚠ Снимок статистики не обновлён — останется предыдущий.');
   const known = new Set(before.map((h) => h.id));
   const fresh = heroIds().filter((h) => !known.has(h.id));
   const knowledge = readFileSync(KNOWLEDGE, 'utf8');
