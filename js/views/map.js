@@ -4,6 +4,8 @@
 // (проверено по данным: смерти одной команды, развёрнутые на 180°, совпадают с другой с корреляцией 0.99).
 import { api } from '../api.js';
 import { L, state, filterBar, bindFilterBar, loading, errorBox, esc, fmtNum, timeWindow, periodLabel, rankLabel } from '../core.js';
+import { getMapAsset, loadImage, recolorMap, themeColors, mixRgb, ramp, modeBar } from './map-common.js';
+import { renderFarm } from './farm.js';
 
 const CELL = 128; // шаг сетки API в игровых юнитах
 const SIGMA = 2; // сглаживание в клетках (~250 юнитов) — пятна вместо «шума» из отдельных клеток
@@ -28,12 +30,9 @@ const LAYERS = [
     ],
   },
 ];
-const view = { layer: 'deaths', phase: 'all' };
+const view = { mode: 'heat', layer: 'deaths', phase: 'all' };
 
 /* ---------- данные ---------- */
-function getMapAsset() {
-  return api('/v1/assets/map', {}, 24 * 60);
-}
 function getKD(phase) {
   const p = PHASES.find((x) => x.v === phase);
   return api('/v1/analytics/kill-death-stats', {
@@ -106,62 +105,15 @@ function zoneName(x, y) {
   return `${y < 0 ? L('Ваша половина', 'Your half') : L('Вражеская половина', 'Enemy half')}, ${side}`;
 }
 
-/* ---------- цвета ---------- */
-const hex = (h) => { const n = parseInt(h.replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
-const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-const mixRgb = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
-/** Цвет по шкале: stops — массив rgb, t ∈ [0,1]. */
-function ramp(stops, t) {
-  const f = Math.max(0, Math.min(1, t)) * (stops.length - 1);
-  const i = Math.min(stops.length - 2, Math.floor(f));
-  return mixRgb(stops[i], stops[i + 1], f - i);
-}
-function themeColors() {
-  return {
-    heat: cssVar('--heat').split(',').map((s) => hex(s.trim())),
-    win: hex(cssVar('--risk-win')),
-    lose: hex(cssVar('--risk-lose')),
-    mid: hex(cssVar('--risk-mid')),
-    street: hex(cssVar('--map-street')),
-    block: hex(cssVar('--map-block')),
-  };
-}
-
-/* ---------- подложка: миникарта, перекрашенная в цвета темы ---------- */
-const imgCache = new Map();
-function loadImage(src) {
-  if (!imgCache.has(src))
-    imgCache.set(src, new Promise((res, rej) => {
-      const im = new Image();
-      im.crossOrigin = 'anonymous';
-      im.onload = () => res(im);
-      im.onerror = () => rej(new Error(L('Не удалось загрузить карту', 'Failed to load the map')));
-      im.src = src;
-    }));
-  return imgCache.get(src);
-}
-/** Улицы на картинке тёмно-серые, здания белые, вокруг прозрачно — раскрашиваем по яркости. */
-function recolorMap(img, colors) {
-  const c = document.createElement('canvas');
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
-  const g = c.getContext('2d');
-  g.drawImage(img, 0, 0);
-  const d = g.getImageData(0, 0, c.width, c.height);
-  const px = d.data;
-  for (let i = 0; i < px.length; i += 4) {
-    if (!px[i + 3]) continue;
-    const l = (px[i] + px[i + 1] + px[i + 2]) / 765;
-    const t = Math.max(0, Math.min(1, (l - 0.27) / 0.6));
-    const [r, gg, b] = mixRgb(colors.street, colors.block, t);
-    px[i] = r; px[i + 1] = gg; px[i + 2] = b;
-  }
-  g.putImageData(d, 0, 0);
-  return c;
-}
-
 /* ---------- страница ---------- */
-export async function render(root, { alive }) {
+export async function render(root, ctx) {
+  const { alive } = ctx;
+  const rerender = () => render(root, ctx);
+  const bindModes = () =>
+    root.querySelectorAll('[data-mapmode]').forEach((b) =>
+      b.addEventListener('click', () => { if (view.mode !== b.dataset.mapmode) { view.mode = b.dataset.mapmode; rerender(); } }));
+  if (view.mode === 'farm') return renderFarm(root, { alive, modeBar: modeBar('farm'), bindModes });
+
   root.innerHTML = filterBar() + loading(L('Загружаем карту и смерти…', 'Loading the map and deaths…'));
   bindFilterBar(root);
   let asset, rows, img;
@@ -199,7 +151,7 @@ export async function render(root, { alive }) {
   root.innerHTML = `
     ${filterBar()}
     <section class="section panel pad">
-      <div class="eyebrow">${L('Карта', 'Map')} · ${esc(periodLabel())} · ${esc(rankLabel())}</div>
+      <div class="map-head"><div class="eyebrow">${L('Карта', 'Map')} · ${esc(periodLabel())} · ${esc(rankLabel())}</div>${modeBar('heat')}</div>
       <h2>${L('Теплокарта смертей и драк', 'Death and fight heatmap')}</h2>
       <div class="sub">${L('Где чаще всего умирают игроки вашего ранга и какие точки опасны. Обе команды сведены к одному виду: ваша база всегда снизу.', 'Where players at your rank die most often and which spots are dangerous. Both teams are combined into one view: your base is always at the bottom.')}</div>
       <div class="rk-kpis map-kpis">
@@ -232,9 +184,10 @@ export async function render(root, { alive }) {
       </div>
     </section>`;
   bindFilterBar(root);
+  bindModes();
 
-  root.querySelectorAll('[data-layer]').forEach((b) => b.addEventListener('click', () => { view.layer = b.dataset.layer; render(root, { alive }); }));
-  root.querySelectorAll('[data-phase]').forEach((b) => b.addEventListener('click', () => { view.phase = b.dataset.phase; render(root, { alive }); }));
+  root.querySelectorAll('[data-layer]').forEach((b) => b.addEventListener('click', () => { view.layer = b.dataset.layer; rerender(); }));
+  root.querySelectorAll('[data-phase]').forEach((b) => b.addEventListener('click', () => { view.phase = b.dataset.phase; rerender(); }));
 
   // значения слоя в каждой клетке: t ∈ [0,1] для цвета, risk — доля смертей
   const peakF = percentile(fS, 0.995);
