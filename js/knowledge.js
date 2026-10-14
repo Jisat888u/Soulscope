@@ -140,6 +140,7 @@ export const HERO_THREATS = {
   72: ['melee', 'cc', 'tank'], // Billy
   76: ['summons', 'spirit', 'cc'], // Graves
   77: ['melee', 'mobile', 'cc'], // Apollo
+  78: ['spirit', 'mobile', 'dot', 'cc'], // Deadman Danny: ракеты с меткой, полёт на ранце, горящее топливо, ульта-захват
   79: ['heal', 'cc', 'summons'], // Rem
   80: ['gun', 'melee', 'tank', 'cc'], // Silver
   81: ['spirit', 'heal', 'cc'], // Celeste
@@ -264,7 +265,7 @@ export const CURATED_PATCHES = {
       'Карта: новые районы (Бродвей, Аптаун, Таймс-сквер, Гринвич, Сипорт), расширены Театр, Чайнатаун, Проклятый пустырь и Площадь.',
       'Новые нейтралы (Haunts) и объекты: Затопленная площадь (риск/награда), колокольня Чайнатауна, прочные ящики под тяжёлый удар, паровые решётки (невидимость + реген), контейнеры с перманентными баффами.',
       'Брокер: появляется около 30-й минуты и затем каждые ~15 минут, меняет предметы высоких тиров на «порченые» — сильнее, но со случайным минусом.',
-      'Новые герои выходят по вторникам и пятницам в порядке голосования: Rat King (2 окт), Baba (6 окт), Solomon (9 окт), далее Nurse Harrow, Deadman Danny и Violet.',
+      'Новые герои выходят по вторникам и пятницам в порядке голосования: Rat King (2 окт), Baba (6 окт), Solomon (9 окт), Deadman Danny (13 окт); последние два героя — 16 окт и позже.',
       'Интерфейс: новые полоски здоровья (видно ульту, Rejuvenator, выносливость врага), расширенные пинги, фильтры и популярные предметы в магазине.',
       'Точечные правки героев: Graves теперь ломает ловушки Venator оружием, у Sinclair и Doorman исправлены баги, у Yamato — траектория удара в воздухе.',
     ],
@@ -273,7 +274,7 @@ export const CURATED_PATCHES = {
       'Map: new districts (Broadway, Uptown, Times Square, Greenwich, Seaport); the Theater, Chinatown, Cursed Lot and Plaza were expanded.',
       'New neutrals (Haunts) and objectives: the Flooded Plaza (risk/reward), the Chinatown bell tower, sturdy crates for heavy melee, steam grates (invisibility + regen), containers with permanent buffs.',
       'The Broker: appears around minute 30 and then every ~15 minutes, trading high-tier items for "tainted" ones — stronger, but with a random downside.',
-      'New heroes release on Tuesdays and Fridays in vote order: Rat King (Oct 2), Baba (Oct 6), Solomon (Oct 9), then Nurse Harrow, Deadman Danny and Violet.',
+      'New heroes release on Tuesdays and Fridays in vote order: Rat King (Oct 2), Baba (Oct 6), Solomon (Oct 9), Deadman Danny (Oct 13); the last two heroes arrive from Oct 16.',
       'UI: new health bars (showing ultimate, Rejuvenator and enemy stamina), expanded pings, shop filters and popular items.',
       'Targeted hero fixes: Graves can now break Venator traps with his gun, Sinclair and Doorman bugs fixed, Yamato’s aerial strike trajectory adjusted.',
     ],
@@ -311,6 +312,25 @@ export const CURATED_PATCHES = {
       'Granny Long Legs — the bench "stands up": speed, high jumps, debuff and melee resistance.',
       'Baba’s Brew — a teapot whose effect cycles: a barrier for allies, a silence, or a burn that lowers spirit resist.',
       'Feed The Birds (ultimate) — bread with a stacking slow, then a flock of pigeons: damage and turning targets into pigeons.',
+    ],
+  },
+  'Fairfax Industries Employee Spotlight': {
+    type: 'news',
+    tldr: 'Новый герой — Deadman Danny (стрелок), «лучший продавец» Fairfax Industries с ракетомётом и реактивным ранцем. Следующий герой — 16 октября, осталось два.',
+    bullets: [
+      'Strix Salvo — залп ракет, которые втыкаются в землю по линии и взрываются с задержкой или рядом с врагом: спирит-урон и метка; заряженный выстрел по помеченному врагу снимает метку и наносит доп. урон.',
+      'Chimera Mk1 — полёт на ранце, пока держите прыжок; ранец копит жар и при перегреве пикирует вниз со взрывом, подбрасывая врагов рядом.',
+      'Jettison Fuel — струя горящего топлива: урон оружием со временем и снижение сопротивления пулям, в конце — мощный выброс со спирит-уроном, который отбрасывает самого Дэнни; охлаждает ранец.',
+      'Close The Deal (ульта) — хватает врага, взлетает с ним и обрушивается на землю: спирит-урон обоим, по врагам ниже 50% здоровья — больше.',
+      'Против него: сопротивление духу, замедления и обездвиживание против полётов, снятие дебаффов против ульты.',
+    ],
+    tldrEn: 'New hero — Deadman Danny (marksman), Fairfax Industries’ star salesman with a rocket launcher and a jetpack. The next hero arrives on October 16; two remain.',
+    bulletsEn: [
+      'Strix Salvo — a salvo of missiles that lodge into the ground along a line and explode after a delay or near an enemy: spirit damage and a mark; a charged shot on a marked enemy consumes the mark for bonus damage.',
+      'Chimera Mk1 — fly while holding jump; the jetpack builds heat and, when it overheats, dives to the ground with an explosion that launches nearby enemies.',
+      'Jettison Fuel — a stream of burning fuel: weapon damage over time and bullet resist shred, ending in a big spirit-damage backblast that knocks Danny back; vents the jetpack.',
+      'Close The Deal (ultimate) — grabs an enemy, flies up and crashes down: spirit damage to both, more against enemies below 50% health.',
+      'Countering him: spirit resist, slows and immobilizes against flight, cleanses against the ultimate.',
     ],
   },
   'Make Your Move.': {
