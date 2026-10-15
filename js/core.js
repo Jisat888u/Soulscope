@@ -4,12 +4,18 @@ import { ROLES, ITEM_REASON, SLOT_REASON } from './knowledge.js';
 
 /* ---------------- состояние ---------------- */
 const DEFAULTS = { lang: 'ru', badge: 0, period: '7d', theme: 'dark' };
+// язык при первом визите — по браузеру; ссылка ?lang=en|ru задаёт его явно (для постов на Reddit и т.п.)
+function initialLang(saved) {
+  const q = new URLSearchParams(location.search).get('lang');
+  if (q === 'en' || q === 'ru') return q;
+  if (saved) return saved;
+  const langs = navigator.languages?.length ? navigator.languages : [navigator.language || ''];
+  return langs.some((l) => /^(ru|uk|be|kk)\b/i.test(l)) ? 'ru' : 'en';
+}
 function loadState() {
-  try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('dt.state') || '{}') };
-  } catch {
-    return { ...DEFAULTS };
-  }
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('dt.state') || '{}'); } catch {}
+  return { ...DEFAULTS, ...saved, lang: initialLang(saved.lang) };
 }
 export const state = loadState();
 const listeners = new Set();
