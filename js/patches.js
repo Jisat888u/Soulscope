@@ -109,13 +109,37 @@ export function analyzeChange(rest) {
     return { ...out, kind: 'num', effect: good ? 'buff' : 'nerf', text: { ru: `${translateStat(m[1])}: ${up ? '+' : '−'}${m[3]}`, en: `${m[1].trim()}: ${up ? '+' : '−'}${m[3]}` } };
   }
 
+  // «… launch reduced (looking up no longer lifts her)» — главное здесь «reduced», а не пояснение в скобках
+  const vm = /^(.*?)\s+(increased|reduced|decreased|lowered|raised|improved)\b/i.exec(change);
+  const noLonger = change.search(/\bno longer\b/i);
+  if (vm && noLonger > vm.index + vm[0].length) {
+    const up = /increased|raised|improved/i.test(vm[2]);
+    const good = isInverse(vm[1]) ? !up : up;
+    return { ...out, effect: good ? 'buff' : 'nerf', label: LBL.change };
+  }
+  // эффект теперь пропадает со смертью героя — ослабление
+  if (/\bnow ends when\b.*\bdies\b/i.test(change)) return { ...out, effect: 'nerf', label: LBL.change };
   if (/\bno longer\b/i.test(change)) {
     const bad = /\bno longer\b.*\b(penalt|self|interrupt|cancel|require|cost|reduce[sd]? your|lose)/i.test(change);
     return { ...out, effect: bad ? 'buff' : 'nerf', label: bad ? LBL.unpenalty : LBL.removed };
   }
+  // «Now has -7% Base Bullet Resistance» — новое, но со знаком минус: это ослабление
+  m = /\bnow has\s+([-−+]?\d+(?:\.\d+)?)\s*%?\s*(.*)$/i.exec(change);
+  if (m) {
+    const neg = /^[-−]/.test(m[1]);
+    const good = isInverse(m[2]) ? neg : !neg;
+    return { ...out, effect: good ? 'buff' : 'nerf', label: LBL.added };
+  }
   if (/\b(can now|now also|now gains?|now grants?|added|now applies|now deals|now heals|now has)\b/i.test(change)) return { ...out, effect: 'buff', label: LBL.added };
   if (/\b(removed)\b/i.test(change)) return { ...out, effect: 'nerf', label: LBL.removed };
   if (/\b(rework|reworked|redesigned)\b/i.test(change)) return { ...out, label: LBL.rework };
+  // без цифр: «Light melee upward launch reduced», «… increased»
+  m = /^(.*?)\s+(increased|reduced|decreased|lowered|raised|improved)\b/i.exec(change);
+  if (m) {
+    const up = /increased|raised|improved/i.test(m[2]);
+    const good = isInverse(m[1]) ? !up : up;
+    return { ...out, effect: good ? 'buff' : 'nerf', label: LBL.change };
+  }
   return { ...out, label: LBL.change };
 }
 

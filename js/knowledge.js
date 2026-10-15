@@ -255,6 +255,7 @@ export const INVERSE_STATS = [
   'cooldown', 'cost', 'cast delay', 'cast time', 'delay', 'reload time', 'reload duration', 'windup', 'spread',
   'self damage', 'self-damage', 'recovery', 'arm time', 'lockout', 'penalty', 'respawn', 'charge time', 'wind up',
   'time to', 'channel time', 'drain', 'health cost', 'falloff start', 'deploy time', 'min charge',
+  'slow effectiveness', 'damage taken', 'incoming damage',
 ];
 
 /** Ручные сводки по крупным обновлениям, в которых нет построчных правок в API. */
