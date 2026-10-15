@@ -86,6 +86,7 @@ const UI = {
   footAbout: ['— фанатская аналитика Deadlock. Не связан с Valve.', '— fan-made Deadlock analytics. Not affiliated with Valve.'],
   footData: ['Данные:', 'Data:'],
   footNotes: ['патчноуты', 'patch notes'],
+  footContact: ['Связь со мной:', 'Contact me:'],
   toTop: ['Наверх', 'Back to top'],
 };
 function applyLang() {

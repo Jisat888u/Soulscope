@@ -638,6 +638,7 @@ table.data td.r, table.data th.r { text-align: right; }
 footer.site { border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
 footer.site .inner { max-width: 1320px; margin: 0 auto; padding: 20px; display: flex; gap: 18px; justify-content: space-between; flex-wrap: wrap; }
 footer.site a { color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
+footer.site .contacts { flex-basis: 100%; overflow-wrap: anywhere; }
 
 /* ---------- теплокарта ---------- */
 .map-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
