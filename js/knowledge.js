@@ -146,6 +146,7 @@ export const HERO_THREATS = {
   81: ['spirit', 'heal', 'cc'], // Celeste
   84: ['tank', 'summons', 'gun'], // Rat King
   85: ['spirit', 'cc', 'summons'], // Solomon: слоны-зоны со спирит-уроном, обездвиживание ладьями, ульта-«мат»
+  86: ['spirit', 'cc', 'channel', 'mobile'], // Violet: «натюрморт» с оглушением пока смотрит на цель, безмолвие в ульте, скольжение по кисти
   88: ['spirit', 'summons', 'cc', 'mobile'], // Baba
 };
 
@@ -266,7 +267,7 @@ export const CURATED_PATCHES = {
       'Карта: новые районы (Бродвей, Аптаун, Таймс-сквер, Гринвич, Сипорт), расширены Театр, Чайнатаун, Проклятый пустырь и Площадь.',
       'Новые нейтралы (Haunts) и объекты: Затопленная площадь (риск/награда), колокольня Чайнатауна, прочные ящики под тяжёлый удар, паровые решётки (невидимость + реген), контейнеры с перманентными баффами.',
       'Брокер: появляется около 30-й минуты и затем каждые ~15 минут, меняет предметы высоких тиров на «порченые» — сильнее, но со случайным минусом.',
-      'Новые герои выходят по вторникам и пятницам в порядке голосования: Rat King (2 окт), Baba (6 окт), Solomon (9 окт), Deadman Danny (13 окт); последние два героя — 16 окт и позже.',
+      'Новые герои выходят по вторникам и пятницам в порядке голосования: Rat King (2 окт), Baba (6 окт), Solomon (9 окт), Deadman Danny (13 окт), Violet (16 окт); последний герой — Nurse Harrow, 20 окт.',
       'Интерфейс: новые полоски здоровья (видно ульту, Rejuvenator, выносливость врага), расширенные пинги, фильтры и популярные предметы в магазине.',
       'Точечные правки героев: Graves теперь ломает ловушки Venator оружием, у Sinclair и Doorman исправлены баги, у Yamato — траектория удара в воздухе.',
     ],
@@ -275,7 +276,7 @@ export const CURATED_PATCHES = {
       'Map: new districts (Broadway, Uptown, Times Square, Greenwich, Seaport); the Theater, Chinatown, Cursed Lot and Plaza were expanded.',
       'New neutrals (Haunts) and objectives: the Flooded Plaza (risk/reward), the Chinatown bell tower, sturdy crates for heavy melee, steam grates (invisibility + regen), containers with permanent buffs.',
       'The Broker: appears around minute 30 and then every ~15 minutes, trading high-tier items for "tainted" ones — stronger, but with a random downside.',
-      'New heroes release on Tuesdays and Fridays in vote order: Rat King (Oct 2), Baba (Oct 6), Solomon (Oct 9), Deadman Danny (Oct 13); the last two heroes arrive from Oct 16.',
+      'New heroes release on Tuesdays and Fridays in vote order: Rat King (Oct 2), Baba (Oct 6), Solomon (Oct 9), Deadman Danny (Oct 13), Violet (Oct 16); the final hero, Nurse Harrow, arrives Oct 20.',
       'UI: new health bars (showing ultimate, Rejuvenator and enemy stamina), expanded pings, shop filters and popular items.',
       'Targeted hero fixes: Graves can now break Venator traps with his gun, Sinclair and Doorman bugs fixed, Yamato’s aerial strike trajectory adjusted.',
     ],
@@ -313,6 +314,25 @@ export const CURATED_PATCHES = {
       'Granny Long Legs — the bench "stands up": speed, high jumps, debuff and melee resistance.',
       'Baba’s Brew — a teapot whose effect cycles: a barrier for allies, a silence, or a burn that lowers spirit resist.',
       'Feed The Birds (ultimate) — bread with a stacking slow, then a flock of pigeons: damage and turning targets into pigeons.',
+    ],
+  },
+  'Paint the Town': {
+    type: 'news',
+    tldr: 'Новый герой — Violet (мистик), художница, которая рисует живыми чернилами. Последний герой обновления — Nurse Harrow — выйдет во вторник, 20 октября.',
+    bullets: [
+      'Living Ink — чернила усиливают её пули; применение любой другой способности сбрасывает перезарядку Flow State.',
+      'Flow State — кисть ползёт вперёд и оставляет след: союзники скользят по нему дальше, врагов он замедляет и бьёт спирит-уроном (тем сильнее, чем дальше прошла кисть). Повторное нажатие — взмах кистью с уроном по большой области.',
+      'Still Life — выбирает героя и рисует его, пока смотрит на него: спирит-урон со временем, а законченный набросок бьёт сильнее и оглушает. С цели падает набросок — подобранные наброски навсегда дают Violet характеристики.',
+      'Abstract Landscape (ульта) — круг чернил: закрывает обзор, даёт союзникам силу духа и подсвечивает врагов внутри; кто выходит из круга — получает урон, безмолвие и замедление.',
+      'Против неё: сопротивление духу, снятие дебаффов против оглушения и безмолвия; разрывайте прямую видимость, пока она рисует Still Life.',
+    ],
+    tldrEn: 'New hero — Violet (mystic), an artist who paints with living ink. The update’s final hero, Nurse Harrow, arrives Tuesday, October 20.',
+    bulletsEn: [
+      'Living Ink — her ink empowers her bullets; casting any other ability refreshes the cooldown of Flow State.',
+      'Flow State — a brush travels forward leaving a trail: allies slide further on it, enemies are slowed and take spirit damage (more the further the brush travelled). Re-activate to flick the brush for area damage.',
+      'Still Life — pick a hero and sketch them while looking at them: spirit damage over time; a completed sketch deals bonus damage and stuns. The target drops a sketch, and collected sketches permanently grant Violet stats.',
+      'Abstract Landscape (ultimate) — a circle of ink that blocks vision, grants allies spirit power and reveals enemies inside; leaving it deals damage, silences and slows.',
+      'Countering her: spirit resist, cleanses against the stun and silence; break line of sight while she is drawing Still Life.',
     ],
   },
   'Fairfax Industries Employee Spotlight': {
