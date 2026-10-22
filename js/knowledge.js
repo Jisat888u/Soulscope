@@ -147,6 +147,7 @@ export const HERO_THREATS = {
   84: ['tank', 'summons', 'gun'], // Rat King
   85: ['spirit', 'cc', 'summons'], // Solomon: слоны-зоны со спирит-уроном, обездвиживание ладьями, ульта-«мат»
   86: ['spirit', 'cc', 'channel', 'mobile'], // Violet: «натюрморт» с оглушением пока смотрит на цель, безмолвие в ульте, скольжение по кисти
+  87: ['heal', 'dot', 'cc', 'channel'], // Nurse Harrow: шприцы-хил союзникам, пиявки и саквояж — спирит-DoT, страх и запрет выносливости, саквояж — канал
   88: ['spirit', 'summons', 'cc', 'mobile'], // Baba
 };
 
@@ -267,7 +268,7 @@ export const CURATED_PATCHES = {
       'Карта: новые районы (Бродвей, Аптаун, Таймс-сквер, Гринвич, Сипорт), расширены Театр, Чайнатаун, Проклятый пустырь и Площадь.',
       'Новые нейтралы (Haunts) и объекты: Затопленная площадь (риск/награда), колокольня Чайнатауна, прочные ящики под тяжёлый удар, паровые решётки (невидимость + реген), контейнеры с перманентными баффами.',
       'Брокер: появляется около 30-й минуты и затем каждые ~15 минут, меняет предметы высоких тиров на «порченые» — сильнее, но со случайным минусом.',
-      'Новые герои выходят по вторникам и пятницам в порядке голосования: Rat King (2 окт), Baba (6 окт), Solomon (9 окт), Deadman Danny (13 окт), Violet (16 окт); последний герой — Nurse Harrow, 20 окт.',
+      'Новые герои выходят по вторникам и пятницам в порядке голосования: Rat King (2 окт), Baba (6 окт), Solomon (9 окт), Deadman Danny (13 окт), Violet (16 окт), Nurse Harrow (20 окт) — она завершила серию.',
       'Интерфейс: новые полоски здоровья (видно ульту, Rejuvenator, выносливость врага), расширенные пинги, фильтры и популярные предметы в магазине.',
       'Точечные правки героев: Graves теперь ломает ловушки Venator оружием, у Sinclair и Doorman исправлены баги, у Yamato — траектория удара в воздухе.',
     ],
@@ -276,7 +277,7 @@ export const CURATED_PATCHES = {
       'Map: new districts (Broadway, Uptown, Times Square, Greenwich, Seaport); the Theater, Chinatown, Cursed Lot and Plaza were expanded.',
       'New neutrals (Haunts) and objectives: the Flooded Plaza (risk/reward), the Chinatown bell tower, sturdy crates for heavy melee, steam grates (invisibility + regen), containers with permanent buffs.',
       'The Broker: appears around minute 30 and then every ~15 minutes, trading high-tier items for "tainted" ones — stronger, but with a random downside.',
-      'New heroes release on Tuesdays and Fridays in vote order: Rat King (Oct 2), Baba (Oct 6), Solomon (Oct 9), Deadman Danny (Oct 13), Violet (Oct 16); the final hero, Nurse Harrow, arrives Oct 20.',
+      'New heroes release on Tuesdays and Fridays in vote order: Rat King (Oct 2), Baba (Oct 6), Solomon (Oct 9), Deadman Danny (Oct 13), Violet (Oct 16), Nurse Harrow (Oct 20) — she completes the lineup.',
       'UI: new health bars (showing ultimate, Rejuvenator and enemy stamina), expanded pings, shop filters and popular items.',
       'Targeted hero fixes: Graves can now break Venator traps with his gun, Sinclair and Doorman bugs fixed, Yamato’s aerial strike trajectory adjusted.',
     ],
@@ -314,6 +315,27 @@ export const CURATED_PATCHES = {
       'Granny Long Legs — the bench "stands up": speed, high jumps, debuff and melee resistance.',
       'Baba’s Brew — a teapot whose effect cycles: a barrier for allies, a silence, or a burn that lowers spirit resist.',
       'Feed The Birds (ultimate) — bread with a stacking slow, then a flock of pigeons: damage and turning targets into pigeons.',
+    ],
+  },
+  'Shh... This Won\'t Hurt a Bit.': {
+    type: 'news',
+    tldr: 'Новый герой — Nurse Harrow (Сестра Хэрроу, стрелок), медсестра из одержимой больницы Марбл-Хилл. Она последняя: выход героев City Never Sleeps завершён.',
+    bullets: [
+      'Leech Therapy — банка с пиявками: присасываются к врагам, наносят спирит-урон со временем и сокращают длительность их баффов, затем ползут обратно к ней. Собранные пиявки усиливают остальные способности.',
+      'Wretched Vapors — пар на себя или союзника: сначала «горячка» (все действия быстрее, входящий урон откладывается в призраков), потом «шок» — действия медленнее, отложенный урон приходит с добавкой. Лечение в этот момент сначала снимает призраков.',
+      'Healing Needles — обойма шприцев, которые лечат союзников; заряды восстанавливаются от нанесённого урона и собранных пиявок.',
+      'Lurking Terrors (ульта, канал) — открывает саквояж: спирит-урон по врагам перед ней; кто смотрит на неё — копит страх и не может тратить выносливость и способности передвижения, на максимуме — убегает в ужасе.',
+      'Против неё: снижение лечения (против её шприцев), сопротивление духу, снятие дебаффов против страха; во время «саквояжа» отворачивайтесь — со спины урон вдвое меньше, и прерывайте канал.',
+      'Итоги голосования: больше 110 млн голосов; ближе всего была пара Baba — Solomon (разница около 0,5%).',
+    ],
+    tldrEn: 'New hero — Nurse Harrow (marksman), a nurse from the haunted Marble Hill Possession Ward. She is the last one: the City Never Sleeps hero releases are complete.',
+    bulletsEn: [
+      'Leech Therapy — a jar of leeches that attach to enemies, dealing spirit damage over time and eating away at their buffs, then crawl back to her. Collected leeches empower her other abilities.',
+      'Wretched Vapors — a vapor on herself or an ally: first a rush (all actions faster, incoming damage delayed into specters), then a crash — slower actions and the delayed damage lands with extra. Healing during it removes specters first.',
+      'Healing Needles — a clip of syringes that heal allies; charges come back from dealing damage and from collected leeches.',
+      'Lurking Terrors (ultimate, channel) — she opens her bag: spirit damage to enemies in front of her; anyone looking at her builds terror and can’t use stamina or movement abilities, and at max terror flees in fear.',
+      'Countering her: healing reduction (against her syringes), spirit resist, cleanses against the fear; during the bag turn away — damage from behind is halved — and interrupt the channel.',
+      'Voting recap: over 110 million votes; the closest race was Baba vs Solomon (about a 0.5% difference).',
     ],
   },
   'Paint the Town': {
