@@ -1,0 +1,2 @@
+cd C:/Users/33jisa/Desktop/dlck-trck && npm start - старт локалхоста
+cd C:/Users/33jisa/Desktop/dlck-trck && npm run deploy - обновление сайта
