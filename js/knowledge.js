@@ -257,7 +257,7 @@ export const INVERSE_STATS = [
   'cooldown', 'cost', 'cast delay', 'cast time', 'delay', 'reload time', 'reload duration', 'windup', 'spread',
   'self damage', 'self-damage', 'recovery', 'arm time', 'lockout', 'penalty', 'respawn', 'charge time', 'wind up',
   'time to', 'channel time', 'drain', 'health cost', 'falloff start', 'deploy time', 'min charge',
-  'slow effectiveness', 'damage taken', 'incoming damage',
+  'slow effectiveness', 'damage taken', 'incoming damage', 'fuse',
 ];
 
 /** Ручные сводки по крупным обновлениям, в которых нет построчных правок в API. */
@@ -315,6 +315,29 @@ export const CURATED_PATCHES = {
       'Granny Long Legs — the bench "stands up": speed, high jumps, debuff and melee resistance.',
       'Baba’s Brew — a teapot whose effect cycles: a barrier for allies, a silence, or a burn that lowers spirit resist.',
       'Feed The Birds (ultimate) — bread with a stacking slow, then a flock of pigeons: damage and turning targets into pigeons.',
+    ],
+  },
+  'Halloween 2026 + Gameplay Update': {
+    type: 'balance',
+    tldr: 'Хэллоуин (до 2 ноября) и большой балансный патч: переделан Мид-босс, отстающим проще догнать, шесть новых героев теперь можно банить. Ослаблены новички — Rat King, Solomon, Violet, Nurse Harrow, Baba.',
+    bullets: [
+      'Хэллоуин: по городу стоят котлы — разбейте тяжёлым ударом, получите конфету, съешьте её ради баффа Sugar Rush.',
+      'Мид-босс: +20% здоровья, снижение сопротивлений действует вдвое слабее, награда урезана с 3000 до 1500 душ. Rejuvenator теперь падает тремя кристаллами вокруг ямы: каждый разбивается одним тяжёлым ударом, полностью лечит и даёт разбившему 500 душ.',
+      'Камбэк: отстающая команда быстрее забирает души Haunts (до +50%), бонус золота с нейтралов до 30%, тиковые души растут у двух самых бедных игроков.',
+      'Экономика и карта: ящики растут на 10% медленнее, Haunts дают на 10% больше и бьют сильнее; в туннелях +50% скорости вместо +70%; паровые решётки ускоряют восстановление выносливости; лечебные снеки лечат 14% вместо 10%.',
+      'Rat King, Baba, Solomon, Deadman Danny, Violet и Nurse Harrow больше не «новые» — их можно банить в рейтинге.',
+      'Предметы: усилен вампиризм (Bullet и Spirit Lifesteal, Infuser, Vampiric Burst, Leech, Fury Trance) и анти-хил (Toxic Bullets, Crippling Headshot, Decay); снова ослаблен Radiant Regeneration, нерф Divine Barrier и Spirit Sap.',
+      'Правки режима Street Brawl на силу героев в обычных матчах не влияют — на сайте они в «Общих изменениях».',
+    ],
+    tldrEn: 'Halloween (through November 2) plus a big balance patch: the Mid-Boss is reworked, trailing teams catch up more easily, and the six new heroes can now be banned. The newcomers — Rat King, Solomon, Violet, Nurse Harrow, Baba — are toned down.',
+    bulletsEn: [
+      'Halloween: cauldrons around the city — break one with a heavy melee to get candy, then eat it for the Sugar Rush buff.',
+      'Mid-Boss: +20% health, resistance reductions are half as effective, bounty cut from 3000 to 1500 souls. The Rejuvenator now drops as three crystals around the pit: each breaks in one heavy melee, fully heals and gives the breaker 500 souls.',
+      'Comeback: the trailing team secures Haunted Souls faster (up to +50%), non-hero comeback gold goes up to 30%, and tick souls grow for the two poorest players.',
+      'Economy and map: breakables grow 10% slower, Haunts give 10% more and hit harder; tunnels give +50% speed instead of +70%; steam vents boost stamina regen; healing snacks heal 14% instead of 10%.',
+      'Rat King, Baba, Solomon, Deadman Danny, Violet and Nurse Harrow are no longer "new" — they can be banned in ranked.',
+      'Items: lifesteal buffed (Bullet and Spirit Lifesteal, Infuser, Vampiric Burst, Leech, Fury Trance) and anti-heal buffed (Toxic Bullets, Crippling Headshot, Decay); Radiant Regeneration nerfed again, Divine Barrier and Spirit Sap nerfed.',
+      'Street Brawl changes don\'t affect hero strength in regular matches — the site lists them under "General changes".',
     ],
   },
   'Shh... This Won\'t Hurt a Bit.': {

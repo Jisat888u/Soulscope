@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { A } from './core.js';
 import { STAT_RU, INVERSE_STATS, CURATED_PATCHES } from './knowledge.js';
 
-const ALIASES = { doorman: 69, 'the doorman': 69, 'mo and krill': 18, 'mo & krill': 18, mo: 18, geist: 4, talon: 17, 'grey talon': 17, 'gray talon': 17 };
+const ALIASES = { nurse: 87, doorman: 69, 'the doorman': 69, 'mo and krill': 18, 'mo & krill': 18, mo: 18, geist: 4, talon: 17, 'grey talon': 17, 'gray talon': 17 };
 
 function nameIndex() {
   const heroes = new Map(Object.entries(ALIASES));
@@ -43,7 +43,15 @@ function translateStat(stat) {
 
 const isInverse = (stat) => {
   const s = stat.toLowerCase();
+  if (/cooldown reduction/.test(s)) return false; // снижение перезарядки — хорошо, хоть и «cooldown»
   return INVERSE_STATS.some((k) => s.includes(k));
+};
+
+// «+10% Max Health for 16s» → «+15% for 20s» сравнимы, а «400 Barrier» → «-65s Cooldown» — нет
+const words = (s) => String(s).toLowerCase().match(/[a-z]{2,}/g) || [];
+const sameUnits = (x, y) => {
+  const a = words(x), b = words(y);
+  return a.every((w) => b.includes(w)) || b.every((w) => a.includes(w));
 };
 
 const LBL = {
@@ -67,6 +75,8 @@ export function analyzeChange(rest) {
   const out = { ability, orig: change, text: { ru: change, en: change }, effect: 'neutral', kind: 'change' };
 
   if (/^(fixed|fix|bug ?fix)/i.test(change)) return { ...out, kind: 'fix', label: LBL.fix };
+  // анимации, подсказки, производительность — на силу не влияют
+  if (/\b(animations?|visual change|warning effects|aim poses|performance improvements)\b/i.test(change)) return { ...out, label: LBL.change };
 
   let stat, from, to, verb;
   let m = /^(.*?)\s+(increased|reduced|decreased|lowered|raised|improved)\s+from\s+(.+?)\s+to\s+(.+?)(?:\s*\((.*)\))?\.?$/i.exec(change);
@@ -88,10 +98,13 @@ export function analyzeChange(rest) {
   if (stat != null && from != null) {
     const a = firstNum(from), b = firstNum(to);
     let up = null;
-    if (a != null && b != null && a !== b) up = b > a;
-    else if (verb) up = /increased|raised|improved/i.test(verb);
+    // глагол надёжнее чисел: «Anti-Heal increased from -35% to -40%» — это рост, хотя −40 < −35
+    if (verb) up = /increased|raised|improved/i.test(verb);
+    else if (a != null && b != null && a !== b && (!/"/.test(from + to) || sameUnits(from, to))) up = b > a;
     if (up != null) {
-      const good = isInverse(stat) ? !up : up;
+      // отрицательная «перезарядка» (-0.25 → -0.45) — это снижение перезарядки, больше = лучше
+      const inverse = isInverse(stat) && !(/cooldown/i.test(stat) && a < 0);
+      const good = inverse ? !up : up;
       return {
         ...out,
         kind: 'num',
@@ -117,20 +130,23 @@ export function analyzeChange(rest) {
     const good = isInverse(vm[1]) ? !up : up;
     return { ...out, effect: good ? 'buff' : 'nerf', label: LBL.change };
   }
-  // эффект теперь пропадает со смертью героя — ослабление
-  if (/\bnow ends when\b.*\bdies\b/i.test(change)) return { ...out, effect: 'nerf', label: LBL.change };
+  // эффект пропадает со смертью героя, новые условия, уязвимости — ослабление
+  if (/\bnow ends\b.*\b(when|if)\b.*\bdies\b|\bnow only\b|\bnow required\b|\bnow goes on cooldown\b|\b(can now be|now gets?)\b.*\b(jumped over|dodged|broken|destroyed|interrupted)\b|\bmore reliably against\b|\bnow reduce\b.*\bmore effectively\b|\bnow\b.*\bslower\b/i.test(change))
+    return { ...out, effect: 'nerf', label: LBL.change };
+  if (/^improved\b|\bnow\b.*\bfaster\b/i.test(change)) return { ...out, effect: 'buff', label: LBL.change };
   if (/\bno longer\b/i.test(change)) {
-    const bad = /\bno longer\b.*\b(penalt|self|interrupt|cancel|require|cost|reduce[sd]? your|lose)/i.test(change);
+    const bad = /\bno longer\b.*\b(penalt|self|interrupt|cancel|require|cost|reduce[sd]? your|lose|initial|delay)/i.test(change);
     return { ...out, effect: bad ? 'buff' : 'nerf', label: bad ? LBL.unpenalty : LBL.removed };
   }
   // «Now has -7% Base Bullet Resistance» — новое, но со знаком минус: это ослабление
-  m = /\bnow has\s+([-−+]?\d+(?:\.\d+)?)\s*%?\s*(.*)$/i.exec(change);
+  m = /\bnow (?:has|deals)\s+([-−+]?\d+(?:\.\d+)?)\s*%?\s*(.*)$/i.exec(change);
   if (m) {
     const neg = /^[-−]/.test(m[1]);
     const good = isInverse(m[2]) ? neg : !neg;
     return { ...out, effect: good ? 'buff' : 'nerf', label: LBL.added };
   }
-  if (/\b(can now|now also|now gains?|now grants?|added|now applies|now deals|now heals|now has)\b/i.test(change)) return { ...out, effect: 'buff', label: LBL.added };
+  if (/\bnow scales with\b.*\binstead\b/i.test(change)) return { ...out, label: LBL.rework };
+  if (/\b(can now|now also|now gains?|now grants?|added|now applies|now deals|now heals|now has|now increases|now counts|now stacks?|now benefits?|now refunds|now scales with|continues to)\b/i.test(change)) return { ...out, effect: 'buff', label: LBL.added };
   if (/\b(removed)\b/i.test(change)) return { ...out, effect: 'nerf', label: LBL.removed };
   if (/\b(rework|reworked|redesigned)\b/i.test(change)) return { ...out, label: LBL.rework };
   // без цифр: «Light melee upward launch reduced», «… increased»
@@ -195,8 +211,16 @@ function parsePatch(p, idx) {
   for (const line of lines) {
     const sec = /^\[\s*(.+?)\s*\]$/.exec(line);
     if (sec) { section = sec[1]; continue; }
+    const head = /^([A-Z][\w &'’-]{1,30}):$/.exec(line); // «Street Brawl:», «Heroes:»
+    if (head) { section = head[1]; continue; }
     if (!/^[-•*]\s*/.test(line)) continue;
     const text = line.replace(/^[-•*]\s*/, '');
+    // Street Brawl — отдельный режим: его правки не влияют на силу героя в обычных матчах
+    if (/street brawl/i.test(section)) {
+      const c = analyzeChange(text);
+      general.push({ ...c, ability: c.ability ? `Street Brawl · ${c.ability}` : 'Street Brawl', section });
+      continue;
+    }
     const colon = text.indexOf(':');
     let placed = false;
     if (colon > 0 && colon < 40) {

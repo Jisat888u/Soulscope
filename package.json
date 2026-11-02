@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",
+    "test": "node scripts/check-patches.mjs",
     "update-assets": "node scripts/update-assets.mjs",
     "update-snapshot": "node scripts/update-snapshot.mjs",
     "deploy": "node scripts/deploy.mjs --assets",
