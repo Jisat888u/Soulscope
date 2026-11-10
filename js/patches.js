@@ -100,7 +100,8 @@ export function analyzeChange(rest) {
     let up = null;
     // глагол надёжнее чисел: «Anti-Heal increased from -35% to -40%» — это рост, хотя −40 < −35
     if (verb) up = /increased|raised|improved/i.test(verb);
-    else if (a != null && b != null && a !== b && (!/"/.test(from + to) || sameUnits(from, to))) up = b > a;
+    // без глагола отрицательные значения сравниваем по модулю: «slow -24% → -28%» — замедление сильнее
+    else if (a != null && b != null && a !== b && (!/"/.test(from + to) || sameUnits(from, to))) up = a < 0 && b < 0 ? -b > -a : b > a;
     if (up != null) {
       // отрицательная «перезарядка» (-0.25 → -0.45) — это снижение перезарядки, больше = лучше
       const inverse = isInverse(stat) && !(/cooldown/i.test(stat) && a < 0);
@@ -131,7 +132,7 @@ export function analyzeChange(rest) {
     return { ...out, effect: good ? 'buff' : 'nerf', label: LBL.change };
   }
   // эффект пропадает со смертью героя, новые условия, уязвимости — ослабление
-  if (/\bnow ends\b.*\b(when|if)\b.*\bdies\b|\bnow only\b|\bnow required\b|\bnow goes on cooldown\b|\b(can now be|now gets?)\b.*\b(jumped over|dodged|broken|destroyed|interrupted)\b|\bmore reliably against\b|\bnow reduce\b.*\bmore effectively\b|\bnow\b.*\bslower\b/i.test(change))
+  if (/\bnow ends\b.*\b(when|if)\b.*\bdies\b|\bnow only\b|\bnow required\b|\bnow goes on cooldown\b|\b(can now be|now gets?)\b.*\b(jumped over|dodged|broken|destroyed|interrupted)\b|\bmore reliably against\b|\bnow reduce\b.*\bmore effectively\b|\bnow\b.*\bslower\b|\bdiminish\w*\b.*\bmore\b/i.test(change))
     return { ...out, effect: 'nerf', label: LBL.change };
   if (/^improved\b|\bnow\b.*\bfaster\b/i.test(change)) return { ...out, effect: 'buff', label: LBL.change };
   if (/\bno longer\b/i.test(change)) {

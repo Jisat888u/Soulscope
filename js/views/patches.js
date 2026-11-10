@@ -83,7 +83,7 @@ const changeLi = (c) => {
 };
 
 function patchHtml(p) {
-  const typeLabel = p.type === 'news' && p.curated ? L('Новый герой', 'New hero') : { major: L('Крупное обновление', 'Major update'), balance: L('Баланс', 'Balance'), news: L('Новости', 'News') }[p.type];
+  const typeLabel = p.curated?.label ? tx(p.curated.label) : p.type === 'news' && p.curated ? L('Новый герой', 'New hero') : { major: L('Крупное обновление', 'Major update'), balance: L('Баланс', 'Balance'), news: L('Новости', 'News') }[p.type];
   const heroes = view.heroFilter ? p.heroes.filter((h) => h.id === view.heroFilter) : p.heroes;
   const open = view.open === p.id || !!view.heroFilter;
   return `<div class="panel patch ${open ? 'open' : ''}" data-id="${esc(p.id)}">

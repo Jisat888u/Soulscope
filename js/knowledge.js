@@ -258,6 +258,7 @@ export const INVERSE_STATS = [
   'self damage', 'self-damage', 'recovery', 'arm time', 'lockout', 'penalty', 'respawn', 'charge time', 'wind up',
   'time to', 'channel time', 'drain', 'health cost', 'falloff start', 'deploy time', 'min charge',
   'slow effectiveness', 'damage taken', 'incoming damage', 'fuse',
+  'buildup time', 'cycle time',
 ];
 
 /** Ручные сводки по крупным обновлениям, в которых нет построчных правок в API. */
@@ -315,6 +316,32 @@ export const CURATED_PATCHES = {
       'Granny Long Legs — the bench "stands up": speed, high jumps, debuff and melee resistance.',
       'Baba’s Brew — a teapot whose effect cycles: a barrier for allies, a silence, or a burn that lowers spirit resist.',
       'Feed The Birds (ultimate) — bread with a stacking slow, then a flock of pigeons: damage and turning targets into pigeons.',
+    ],
+  },
+  'Ranked - Beta Season 2': {
+    type: 'news',
+    label: { ru: 'Рейтинг', en: 'Ranked' },
+    tldr: 'Начался рейтинговый Beta Season 2 — до 11 марта 2027. Мягкий сброс (в среднем −1 знак) плюс перераспределение рангов; защиты от понижения стало меньше, банов — 4 вместо 3.',
+    bullets: [
+      'Сброс: сначала ранги всех игроков перераспределяются по новой кривой, затем в среднем −1 знак с поправкой на винрейт в прошлом сезоне. Кто-то даже поднимется. Повторная калибровка не нужна тем, кто играл в Season 1.',
+      'Щиты от понижения: у Phantom, Ascendant и Eternus их больше нет; у остальных на границе знака 3 вместо 5, на границе подранга 1 вместо 2.',
+      'Очки: 350 за матч вместо 300; переход на новый знак с последнего подранга — 1500 очков вместо 2000.',
+      'Баны: 4 героя за матч вместо 3.',
+      'Потолок калибровки в новом сезоне: Ascendant I, по итогам прошлого сезона — до Ascendant III (раньше Oracle VI).',
+      'Разблокировка героя в рейтинге: 35 очков, 2 за победу и 1 за поражение (раньше 15 побед).',
+      'Таблицы лидеров отдельно на каждый сезон: нужно 50 рейтинговых матчей за последние 30 дней, для таблицы героя — 15 матчей на нём.',
+      'На сайте «Весь сезон» в разделе «Ранги» теперь считается с начала Season 2.',
+    ],
+    tldrEn: 'Ranked Beta Season 2 has started and runs until March 11, 2027. A soft reset (about −1 badge on average) plus a global rank redistribution; fewer rank-loss shields, and 4 bans instead of 3.',
+    bulletsEn: [
+      'Reset: everyone’s ranks are first redistributed onto a new curve, then lowered by about 1 badge on average with a 1–2 subrank adjustment based on last season’s win rate. Some players will even go up. Season 1 players don’t need to calibrate again.',
+      'Rank-loss shields: removed for Phantom, Ascendant and Eternus; for everyone else 3 instead of 5 at a badge boundary and 1 instead of 2 at a subrank boundary.',
+      'Points: 350 per match instead of 300; reaching a new badge from the final subrank takes 1500 instead of 2000.',
+      'Bans: 4 heroes per match instead of 3.',
+      'Placement cap this season: Ascendant I, or up to Ascendant III based on last season (it used to be Oracle VI).',
+      'Unlocking a hero in ranked: 35 points, 2 per win and 1 per loss (it used to be 15 wins).',
+      'Leaderboards are now per season: 50 ranked matches in the last 30 days, 15 on a hero for that hero’s board.',
+      'On this site, "Whole season" on the Ranks page now counts from the start of Season 2.',
     ],
   },
   'Halloween 2026 + Gameplay Update': {

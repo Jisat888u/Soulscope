@@ -36,7 +36,8 @@ export async function render(root, { alive }) {
 
   let rows;
   try {
-    const min = view.period === 'season' ? undefined : nowRounded() - +view.period * 86400;
+    // «весь сезон» — с начала текущего сезона, иначе ранги прошлого сезона смешались бы с новыми
+    const min = view.period === 'season' ? currentInterval()?.interval.start_timestamp : nowRounded() - +view.period * 86400;
     rows = await api('/v1/players/rank/distribution', { min_unix_timestamp: min }, 30);
   } catch (e) {
     if (alive()) { root.innerHTML = head() + errorBox(e); bindHead(); }

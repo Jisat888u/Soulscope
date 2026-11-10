@@ -20,6 +20,10 @@ const cases = {
   'Abstract Landscape - Now ends early if Violet dies': 'nerf',
   'Polished slide animations, added new ability and item aim poses': 'neutral',
   'Healing Nova: Now scales with Spirit Power (1.1) instead of Boons (6)': 'neutral',
+  'Lurking Terrors - Fear buildup time reduced from 2s to 1.75s': 'buff',
+  "Baba's Brew - Cycle time increased from 1.5s to 1.6s": 'nerf',
+  'Sand Blast - T2 slow from -24% Slow and -26% Dash distance to -28% for both': 'buff',
+  'Stacks now diminish 20% more aggressively': 'nerf',
 };
 for (const [line, want] of Object.entries(cases)) assert.equal(analyzeChange(line).effect, want, line);
 console.log(`ok: ${Object.keys(cases).length} строк разобраны верно`);

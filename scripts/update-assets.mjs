@@ -154,7 +154,8 @@ async function main() {
     small: r.images?.small_webp || r.images?.chalk_webp || r.images?.large_webp || null,
   }));
   const seasons = (seasonsEn.length ? seasonsEn : seasonsRu).map((s, i) => ({
-    name: seasonsRu[i]?.name || s.name,
+    // у новых сезонов API поначалу отдаёт русское имя по-английски: «Beta Season 2» → «Бета-сезон 2»
+    name: (seasonsRu[i]?.name || s.name).replace(/^Beta Season (\d+)$/, 'Бета-сезон $1'),
     nameEn: s.name,
     intervals: s.intervals || [],
   }));
